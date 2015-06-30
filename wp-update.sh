@@ -12,4 +12,9 @@ echo $pull_msg | grep 'Already up-to-date'
 
 [ ! -d $basedir/bkp ] && mkdir $basedir/bkp
 
+source $basedir/app.conf
+
 tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath 
+
+cd  $WordPressPath
+$wpcli plugin update --all
