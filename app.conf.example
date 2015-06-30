@@ -1,0 +1,14 @@
+#!/bin/bash
+
+#full path of your wp-cli
+#ex: wpcli=/usr/bin/wp
+export wpcli=''
+
+
+#complete path of your wordpress root instalation
+#ex: WordPressPath=/var/www/example.com/
+export WordPressPath=''
+
+#Optional
+#ex: tar_custom_excludes='--exclude=/some/path/bigger --exlude/another/path/bigger'
+export tar_custom_excludes=''
