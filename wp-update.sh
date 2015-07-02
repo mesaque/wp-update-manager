@@ -14,7 +14,15 @@ echo $pull_msg | grep 'Already up-to-date'
 
 source $basedir/app.conf
 
+#security backup 
 tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath 
-
+cd $basedir/bkp
+backup_files=$(ls --time-style=+%F_%Hh%M | xargs readlink -f)
+count_files=$(echo "$backup_files" | wc -l)
+[ "$count_files" -gt 3 ] && {
+	count_to_remove=$( expr $count_files - 3 )	
+	echo "$backup_files" | head -n${count_to_remove} | xargs rm  
+}
 cd  $WordPressPath
 $wpcli plugin update --all
+$wpcli core update
