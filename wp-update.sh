@@ -24,5 +24,11 @@ count_files=$(echo "$backup_files" | wc -l)
 	echo "$backup_files" | head -n${count_to_remove} | xargs rm  
 }
 cd  $WordPressPath
-$wpcli plugin update --all
 $wpcli core update
+$wpcli plugin update --all
+
+if [ $? = 0 ]; then
+	$basedir/slack_notification 'Update successful' '' $basedir
+else
+	$basedir/slack_notification 'Update successful' '' $basedir 'error'
+fi

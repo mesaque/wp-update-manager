@@ -12,3 +12,8 @@ export WordPressPath=''
 #Optional
 #ex: tar_custom_excludes='--exclude=/some/path/bigger --exlude/another/path/bigger'
 export tar_custom_excludes=''
+
+#slack
+export bot_user_name=
+export bot_avatar=
+export slack_web_hook_url=

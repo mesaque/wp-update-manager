@@ -1,0 +1,32 @@
+#!/bin/bash
+
+pretext=$1
+fields=$2
+USERNAME="\"username\":\"$bot_user_name\","
+AVATAR="\"icon_url\":\"$bot_avatar\","
+
+text='backup information.'
+color='good'
+
+if [ "$fields" ];then
+  color='warning'
+  text='We found a problems.' 
+
+  formated_fields=$(\
+  for i in  $fields; do
+    echo -n "{\"value\":\"$i\",\"short\":false},"
+  done | sed 's/,$//');
+  field=",\"fields\":[$formated_fields]"
+fi
+
+fallback=$text
+[ "$4" ] && color='danger'
+
+json="{ $USERNAME $AVATAR\
+\"fallback\": \"$fallback\",\
+\"color\":\"$color\", \
+\"pretext\":\"$pretext\",\
+\"text\":\"$text\"\
+$field}";
+
+result=$(curl -X POST --data-urlencode "payload=$json" "$slack_web_hook_url" --output $3/result.txt -w "%{http_code}")
