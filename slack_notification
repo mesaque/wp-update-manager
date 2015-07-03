@@ -5,7 +5,7 @@ fields=$2
 USERNAME="\"username\":\"$bot_user_name\","
 AVATAR="\"icon_url\":\"$bot_avatar\","
 
-text='backup information.'
+text='update information.'
 color='good'
 
 if [ "$fields" ];then
