@@ -14,8 +14,19 @@ echo $pull_msg | grep 'Already up-to-date'
 
 source $basedir/app.conf
 
-#security backup 
+###security backup### 
 tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath 
+
+######################################################
+#################plugins payed########################
+plugins_payed=$(ls $basedir/plugins_payed/)
+for plugin in $plugins_payed; do
+	if [ -d "${WordPressPath}/wp-content/plugins/${plugin}" ] ; then
+		rm -rf ${WordPressPath}/wp-content/plugins/${plugin}
+		cp -rf "$basedir/plugins_payed/${plugin}" "${WordPressPath}/wp-content/plugins/"
+	fi
+done
+######################################################
 cd $basedir/bkp
 backup_files=$(ls --time-style=+%F_%Hh%M | xargs readlink -f)
 count_files=$(echo "$backup_files" | wc -l)
