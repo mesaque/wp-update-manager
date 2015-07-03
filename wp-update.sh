@@ -28,7 +28,7 @@ $wpcli core update
 $wpcli plugin update --all
 
 if [ $? = 0 ]; then
-	$basedir/slack_notification 'Update successful' '' $basedir
+	$basedir/slack_notification "{$web_site_url}Update successful" '' $basedir
 else
-	$basedir/slack_notification 'Update successful' '' $basedir 'error'
+	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
 fi

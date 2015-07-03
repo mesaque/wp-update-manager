@@ -1,5 +1,6 @@
 #!/bin/bash
 
+export web_site_url=''
 #full path of your wp-cli
 #ex: wpcli=/usr/bin/wp
 export wpcli=''
