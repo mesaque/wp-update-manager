@@ -2,3 +2,6 @@ app.conf
 bkp/
 bkp/*
 result.txt
+coreUpdate.log
+pluginsUpdate.log
+status.log

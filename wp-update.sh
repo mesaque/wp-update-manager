@@ -1,6 +1,9 @@
 #!/bin/bash
 
-basedir=$(dirname $0);
+basename=$(basename $0);
+basedir=$( which $0 |  sed "s/\/$basename//g");
+log=$basedir/status.log
+rm $log &> /dev/null
 
 #auto-update
 pull_msg=$(cd $basedir/; git pull origin master)
@@ -35,11 +38,24 @@ count_files=$(echo "$backup_files" | wc -l)
 	echo "$backup_files" | head -n${count_to_remove} | xargs rm  
 }
 cd  $WordPressPath
-$wpcli core update
-$wpcli plugin update --all
-
-if [ $? = 0 ]; then
-	$basedir/slack_notification "{$web_site_url}Update successful" '' $basedir
-else
+$wpcli core update &> $basedir/coreUpdate.log
+$wpcli plugin update --all &> $basedir/pluginsUpdate.log
+[ $? != 0 ] && {
 	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
+	exit 1
+}
+#handle log from WordPress Update
+wpResult=$( cat $basedir/coreUpdate.log | sed 's/^[^U].*$//;s/Us.*$//' )
+[ "$wpResult" ] && echo "WordPress is $wpResult" >> $log
+
+#handle log from free plugins
+pluginResult=$(cat $basedir/pluginsUpdate.log | sed '1,/Success/ d' | sed 's/^nam.*$//;s/^Suc.*$//')
+linePluginCount=$(echo "$pluginResult" | wc -l);
+[ $linePluginCount -gt 1 ] && echo "$pluginResult" >> $log 
+
+if [ -s $log ]; then
+	statusMsg=$(cat $log | tr '&' '&amp;' | tr '<' '&lt;' | tr '>' '&gt;' | tr ' ' _ | tr "\t" ___ )
+	$basedir/slack_notification "{$web_site_url}Update successful" "$statusMsg" $basedir
+else
+	$basedir/slack_notification "{$web_site_url}Everything is up to date :P" '' $basedir
 fi
