@@ -42,8 +42,8 @@ plugins_payed=$(ls $basedir/plugins_payed/)
 
 ###begin update script by wp-cli
 cd  $WordPressPath
-$wpcli core update &> $basedir/coreUpdate.log
-$wpcli plugin update --all &> $basedir/pluginsUpdate.log
+php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
+php $basedir/lib/wp-cli.phar plugin update --all &> $basedir/pluginsUpdate.log
 [ $? != 0 ] && {
 	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
 	exit 1

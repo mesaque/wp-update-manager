@@ -1,13 +1,9 @@
 #!/bin/bash
 
 export web_site_url=''
-#full path of your wp-cli
-#ex: wpcli=/usr/bin/wp
-export wpcli=''
-
 
 #complete path of your wordpress root instalation
-#ex: WordPressPath=/var/www/example.com/
+#ex: WordPressPath=/var/www/example.com
 export WordPressPath=''
 
 #Optional
