@@ -5,11 +5,11 @@ fields=$2
 USERNAME="\"username\":\"$bot_user_name\","
 AVATAR="\"icon_url\":\"$bot_avatar\","
 
-text='Information:'
+text='General Information:'
 color='good'
 
 if [ "$fields" ];then
-  text='Information:' 
+  text='General Information:' 
 
   formated_fields=$(\
   for i in  $fields; do

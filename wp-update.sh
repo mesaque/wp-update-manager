@@ -17,26 +17,30 @@ echo $pull_msg | grep 'Already up-to-date'
 
 source $basedir/app.conf
 
-###security backup### 
-tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath 
+###handle backup### 
+tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath &> /dev/null
 
-######################################################
-#################plugins payed########################
-plugins_payed=$(ls $basedir/plugins_payed/)
-for plugin in $plugins_payed; do
-	if [ -d "${WordPressPath}/wp-content/plugins/${plugin}" ] ; then
-		rm -rf ${WordPressPath}/wp-content/plugins/${plugin}
-		cp -rf "$basedir/plugins_payed/${plugin}" "${WordPressPath}/wp-content/plugins/"
-	fi
-done
-######################################################
+### manage backup 
 cd $basedir/bkp
 backup_files=$(ls --time-style=+%F_%Hh%M | xargs readlink -f)
 count_files=$(echo "$backup_files" | wc -l)
-[ "$count_files" -gt 3 ] && {
-	count_to_remove=$( expr $count_files - 3 )	
-	echo "$backup_files" | head -n${count_to_remove} | xargs rm  
+[ "$count_files" -gt 2 ] && {
+        count_to_remove=$( expr $count_files - 2 )
+        echo "$backup_files" | head -n${count_to_remove} | xargs rm
 }
+
+###uptade plugins payed###
+plugins_payed=$(ls $basedir/plugins_payed/)
+[ "$plugins_payed" ] && {
+	for plugin in $plugins_payed; do
+		if [ -d "${WordPressPath}/wp-content/plugins/${plugin}" ] ; then
+			rm -rf ${WordPressPath}/wp-content/plugins/${plugin}
+			cp -rf "$basedir/plugins_payed/${plugin}" "${WordPressPath}/wp-content/plugins/"
+		fi
+	done
+}
+
+###begin update script by wp-cli
 cd  $WordPressPath
 $wpcli core update &> $basedir/coreUpdate.log
 $wpcli plugin update --all &> $basedir/pluginsUpdate.log
@@ -53,8 +57,12 @@ pluginResult=$(cat $basedir/pluginsUpdate.log | sed '1,/Success/ d' | sed 's/^na
 linePluginCount=$(echo "$pluginResult" | wc -l);
 [ $linePluginCount -gt 1 ] && echo "$pluginResult" >> $log 
 
+#handle log from payed plugins
+plugins_payed_version=$(find $basedir/plugins_payed/ -maxdepth 2 | grep '.php' | xargs grep 'Version: ' | sed 's#.*/##' | sed 's#.$##' | sed 's#.php:# updated to #')
+[ "$plugins_payed" ] && echo "$plugins_payed_version" >> $log
+
 if [ -s $log ]; then
-	statusMsg=$(cat $log | tr '&' '&amp;' | tr '<' '&lt;' | tr '>' '&gt;' | tr ' ' _ | tr "\t" ___ )
+	statusMsg=$(cat $log | sed 's#&#\&amp;#g' | sed 's#<#\&lt;#g'  | sed 's#>#\&gt;#g' | sed 's# #\&nbsp;#g' | sed 's#\t#\&nbsp;\&nbsp;#g' | sed 's#:#\&colon;#g' )
 	$basedir/slack_notification "{$web_site_url}Update successful" "$statusMsg" $basedir
 else
 	$basedir/slack_notification "{$web_site_url}Everything is up to date :P" '' $basedir
