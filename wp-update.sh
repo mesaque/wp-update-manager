@@ -4,6 +4,7 @@ basename=$(basename $0);
 basedir=$( which $0 |  sed "s/\/$basename//g");
 log=$basedir/status.log
 rm $log &> /dev/null
+rm $basedir/plugins_payed.log &> /dev/null
 
 #auto-update
 pull_msg=$(cd $basedir/; git pull origin master)
@@ -31,15 +32,22 @@ count_files=$(echo "$backup_files" | wc -l)
 
 ###uptade plugins payed###
 plugins_payed=$(ls $basedir/plugins_payed/)
+plugins_list=$(cd $WordPressPath; php $basedir/lib/wp-cli.phar plugin list)
 [ "$plugins_payed" ] && {
 	for plugin in $plugins_payed; do
 		if [ -d "${WordPressPath}/wp-content/plugins/${plugin}" ] ; then
+			vsP=$( echo "$plugins_list" | grep "${plugin}\s" | sed 's#\s#_#g' | cut -d'_' -f4)
+			vsE=$(find $basedir/plugins_payed/${plugin} -maxdepth 1 | grep '.php' | xargs grep 'Version: ' | sed 's#.*/##' | sed 's#.$##' | sed 's# #_#g' | cut -d'_' -f2)
+			checkVersion=$(expr "$vsE" \< "$vsP")
+			equalVersion=$(expr "$vsE" = "$vsP")
+			[ "$equalVersion" == 1 ] && continue;
+			[ "$checkVersion" == 1 ] && continue;
 			rm -rf ${WordPressPath}/wp-content/plugins/${plugin}
 			cp -rf "$basedir/plugins_payed/${plugin}" "${WordPressPath}/wp-content/plugins/"
+			echo "${plugin} ${vsP} ${vsE} Updated" >> $basedir/plugins_payed.log
 		fi
 	done
 }
-
 ###begin update script by wp-cli
 cd  $WordPressPath
 php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
@@ -58,8 +66,8 @@ linePluginCount=$(echo "$pluginResult" | wc -l);
 [ $linePluginCount -gt 1 ] && echo "$pluginResult" >> $log 
 
 #handle log from payed plugins
-plugins_payed_version=$(find $basedir/plugins_payed/ -maxdepth 2 | grep '.php' | xargs grep 'Version: ' | sed 's#.*/##' | sed 's#.$##' | sed 's#.php:# updated to #')
-[ "$plugins_payed" ] && echo "$plugins_payed_version" >> $log
+plugins_payed_version=$(cat $basedir/plugins_payed.log)
+[ -s $basedir/plugins_payed.log ] && echo "$plugins_payed_version" >> $log
 
 if [ -s $log ]; then
 	statusMsg=$(cat $log | sed 's#&#\&amp;#g' | sed 's#<#\&lt;#g'  | sed 's#>#\&gt;#g' | sed 's# #\&nbsp;#g' | sed 's#\t#\&nbsp;\&nbsp;#g' | sed 's#:#\&colon;#g' )
