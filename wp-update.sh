@@ -44,7 +44,7 @@ plugins_list=$(cd $WordPressPath; php $basedir/lib/wp-cli.phar plugin list)
 			[ "$checkVersion" == 1 ] && continue;
 			rm -rf ${WordPressPath}/wp-content/plugins/${plugin}
 			cp -rf "$basedir/plugins_payed/${plugin}" "${WordPressPath}/wp-content/plugins/"
-			echo "${plugin} ${vsP} ${vsE} Updated" >> $basedir/plugins_payed.log
+			echo "${plugin} ${vsP}   ${vsE} Updated" >> $basedir/plugins_payed.log
 		fi
 	done
 }
