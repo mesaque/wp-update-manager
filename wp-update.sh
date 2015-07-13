@@ -6,12 +6,11 @@ log=$basedir/status.log
 rm $log &> /dev/null
 rm $basedir/plugins_payed.log &> /dev/null
 
-#auto-update
-pull_msg=$(cd $basedir/; git pull origin master)
-echo $pull_msg | grep 'Already up-to-date'
-[ "$?" != 0 ] && {
-        $basedir/wp-update.sh
-        exit 0
+#try auto-update
+[ "$1" ] || {
+	cd $basedir/; git pull origin master
+	$basedir/wp-update.sh 'Already up-to-date'
+        exit 0 
 }
 
 [ ! -d $basedir/bkp ] && mkdir $basedir/bkp
