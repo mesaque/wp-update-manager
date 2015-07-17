@@ -4197,35 +4197,29 @@ abstract class GFAddOn {
 				break;
 
 			default:
-				$field      = GFFormsModel::get_field( $form, $field_id );
-				$is_integer = $field_id == intval( $field_id );
-				$input_type = GFFormsModel::get_input_type( $field );
+				$field = GFFormsModel::get_field( $form, $field_id );
 
-				if ( $is_integer && $input_type == 'address' ) {
+				if ( is_object( $field ) ) {
+					$is_integer = $field_id == intval( $field_id );
+					$input_type = $field->get_input_type();
 
-					$field_value = $this->get_full_address( $entry, $field_id );
+					if ( $is_integer && $input_type == 'address' ) {
 
-				} elseif ( $is_integer && $input_type == 'name' ) {
+						$field_value = $this->get_full_address( $entry, $field_id );
 
-					$field_value = $this->get_full_name( $entry, $field_id );
+					} elseif ( $is_integer && $input_type == 'name' ) {
 
-				} elseif ( $is_integer && $input_type == 'checkbox' ) {
+						$field_value = $this->get_full_name( $entry, $field_id );
 
-					$selected = array();
+					} elseif ( $input_type == 'list' ) {
 
-					foreach ( $field->inputs as $input ) {
-						$index = (string) $input['id'];
-						if ( ! rgempty( $index, $entry ) ) {
-							$selected[] = rgar( $entry, $index );
-						}
+						$field_value = $this->get_list_field_value( $entry, $field_id, $field );
+
+					} else {
+
+						$field_value = $field->get_value_export( $entry, $field_id );
+
 					}
-
-					$field_value = implode( ', ', $selected );
-
-				} elseif ( $input_type == 'list' ) {
-
-					$field_value = $this->get_list_field_value( $entry, $field_id, $field );
-
 				} else {
 
 					$field_value = rgar( $entry, $field_id );
@@ -4266,22 +4260,8 @@ abstract class GFAddOn {
 	 * @return string
 	 */
 	protected function get_full_address( $entry, $field_id ) {
-		$street_value  = str_replace( '  ', ' ', trim( rgar( $entry, $field_id . '.1' ) ) );
-		$street2_value = str_replace( '  ', ' ', trim( rgar( $entry, $field_id . '.2' ) ) );
-		$city_value    = str_replace( '  ', ' ', trim( rgar( $entry, $field_id . '.3' ) ) );
-		$state_value   = str_replace( '  ', ' ', trim( rgar( $entry, $field_id . '.4' ) ) );
-		$zip_value     = trim( rgar( $entry, $field_id . '.5' ) );
-		$country_value = GF_Fields::get( 'address' )->get_country_code( trim( rgar( $entry, $field_id . '.6' ) ) );
 
-		$address = $street_value;
-		$address .= ! empty( $address ) && ! empty( $street2_value ) ? "  $street2_value" : $street2_value;
-		$address .= ! empty( $address ) && ( ! empty( $city_value ) || ! empty( $state_value ) ) ? ", $city_value," : $city_value;
-		$address .= ! empty( $address ) && ! empty( $city_value ) && ! empty( $state_value ) ? "  $state_value" : $state_value;
-		$address .= ! empty( $address ) && ! empty( $zip_value ) ? "  $zip_value," : $zip_value;
-		$address .= ! empty( $address ) && ! empty( $country_value ) ? "  $country_value" : $country_value;
-
-
-		return $address;
+		return GF_Fields::get( 'address' )->get_value_export( $entry, $field_id );
 	}
 
 	/**
@@ -4294,26 +4274,7 @@ abstract class GFAddOn {
 	 */
 	protected function get_full_name( $entry, $field_id ) {
 
-		//If field is simple (one input), simply return full content
-		$name = rgar( $entry, $field_id );
-		if ( ! empty( $name ) ) {
-			return $name;
-		}
-
-		//Complex field (multiple inputs). Join all pieces and create name
-		$prefix = trim( rgar( $entry, $field_id . '.2' ) );
-		$first  = trim( rgar( $entry, $field_id . '.3' ) );
-		$middle = trim( rgar( $entry, $field_id . '.4' ) );
-		$last   = trim( rgar( $entry, $field_id . '.6' ) );
-		$suffix = trim( rgar( $entry, $field_id . '.8' ) );
-
-		$name = $prefix;
-		$name .= ! empty( $name ) && ! empty( $first ) ? ' ' . $first : $first;
-		$name .= ! empty( $name ) && ! empty( $middle ) ? ' ' . $middle : $middle;
-		$name .= ! empty( $name ) && ! empty( $last ) ? ' ' . $last : $last;
-		$name .= ! empty( $name ) && ! empty( $suffix ) ? ' ' . $suffix : $suffix;
-
-		return $name;
+		return GF_Fields::get( 'name' )->get_value_export( $entry, $field_id );
 	}
 
 	/**
@@ -4326,30 +4287,8 @@ abstract class GFAddOn {
 	 * @return string
 	 */
 	protected function get_list_field_value( $entry, $field_id, $field ) {
-		if ( ! ctype_digit( $field_id ) ) {
-			$field_id_array = explode( '.', $field_id );
-			$field_id       = rgar( $field_id_array, 0 );
-			$column_num     = rgar( $field_id_array, 1 );
-		}
 
-		$value = rgar( $entry, $field_id );
-		if ( empty( $value ) ) {
-			return '';
-		}
-
-		$list_values = $column_values = unserialize( $value );
-
-		if ( ! empty( $column_num ) && $field->enableColumns ) {
-			$column        = rgars( $field->choices, "{$column_num}/text" );
-			$column_values = array();
-			foreach ( $list_values as $value ) {
-				$column_values[] = rgar( $value, $column );
-			}
-		} elseif ( $field->enableColumns ) {
-			return $value;
-		}
-
-		return GFCommon::implode_non_blank( ', ', $column_values );
+		return $field->get_value_export( $entry, $field_id );
 	}
 	
 	/**
@@ -4394,6 +4333,32 @@ abstract class GFAddOn {
 			
 		}
 		
+	}
+	
+	//--------------- Notes ------------------
+	/**
+	 * Override this function to specify a custom avatar (i.e. the payment gateway logo) for entry notes created by the Add-On
+	 * @return  string - A fully qualified URL for the avatar
+	 */
+	public function note_avatar() {
+		return false;
+	}
+
+	public function notes_avatar( $avatar, $note ) {
+		if ( $note->user_name == $this->_short_title && empty( $note->user_id ) && $this->method_is_overridden( 'note_avatar', 'GFAddOn' ) ) {
+			$new_avatar = $this->note_avatar();
+		}
+
+		return empty( $new_avatar ) ? $avatar : "<img alt='{$this->_short_title}' src='{$new_avatar}' class='avatar avatar-48' height='48' width='48' />";
+	}
+
+	public function add_note( $entry_id, $note, $note_type = null ) {
+
+		$user_id   = 0;
+		$user_name = $this->_short_title;
+
+		GFFormsModel::add_note( $entry_id, $user_id, $user_name, $note, $note_type );
+
 	}
 
 	//--------------  Helper functions  ---------------------------------------------------

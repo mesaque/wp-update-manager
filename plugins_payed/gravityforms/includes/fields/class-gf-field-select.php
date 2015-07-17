@@ -107,6 +107,14 @@ class GF_Field_Select extends GF_Field {
 
 		return GFCommon::selection_display( $value, $this, $currency, $use_text );
 	}
+
+	public function get_value_export( $entry, $input_id = '', $use_text = false ) {
+		if ( empty( $input_id ) ) {
+			$input_id = $this->id;
+		}
+
+		return GFCommon::selection_display( rgar( $entry, $input_id ), $this, rgar( $entry, 'currency' ), $use_text );
+	}
 }
 
 GF_Fields::register( new GF_Field_Select() );

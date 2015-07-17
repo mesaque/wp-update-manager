@@ -3773,31 +3773,31 @@ class GFFormsModel {
 
 			switch ( $field_id ) {
 				case 'id' :
-					$columns[ $field_id ] = array( 'label' => 'Entry Id', 'type' => 'id' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Entry Id', 'gravityforms' ), 'type' => 'id' );
 					break;
 				case 'ip' :
-					$columns[ $field_id ] = array( 'label' => 'User IP', 'type' => 'ip' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'User IP', 'gravityforms' ), 'type' => 'ip' );
 					break;
 				case 'date_created' :
-					$columns[ $field_id ] = array( 'label' => 'Entry Date', 'type' => 'date_created' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Entry Date', 'gravityforms' ), 'type' => 'date_created' );
 					break;
 				case 'source_url' :
-					$columns[ $field_id ] = array( 'label' => 'Source Url', 'type' => 'source_url' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Source Url', 'gravityforms' ), 'type' => 'source_url' );
 					break;
 				case 'payment_status' :
-					$columns[ $field_id ] = array( 'label' => 'Payment Status', 'type' => 'payment_status' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Payment Status', 'gravityforms' ), 'type' => 'payment_status' );
 					break;
 				case 'transaction_id' :
-					$columns[ $field_id ] = array( 'label' => 'Transaction Id', 'type' => 'transaction_id' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Transaction Id', 'gravityforms' ), 'type' => 'transaction_id' );
 					break;
 				case 'payment_date' :
-					$columns[ $field_id ] = array( 'label' => 'Payment Date', 'type' => 'payment_date' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Payment Date', 'gravityforms' ), 'type' => 'payment_date' );
 					break;
 				case 'payment_amount' :
-					$columns[ $field_id ] = array( 'label' => 'Payment Amount', 'type' => 'payment_amount' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'Payment Amount', 'gravityforms' ), 'type' => 'payment_amount' );
 					break;
 				case 'created_by' :
-					$columns[ $field_id ] = array( 'label' => 'User', 'type' => 'created_by' );
+					$columns[ $field_id ] = array( 'label' => esc_html__( 'User', 'gravityforms' ), 'type' => 'created_by' );
 					break;
 				case ( ( is_string( $field_id ) || is_int( $field_id ) ) && array_key_exists( $field_id, $entry_meta ) ) :
 					$columns[ $field_id ] = array( 'label' => $entry_meta[ $field_id ]['label'], 'type' => $field_id );

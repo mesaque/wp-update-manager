@@ -278,6 +278,24 @@ class GF_Field_Checkbox extends GF_Field {
 		}
 	}
 
+	public function get_value_export( $entry, $input_id = '', $use_text = false ) {
+		if ( empty( $input_id ) || absint( $input_id ) == $input_id ) {
+			$selected = array();
+
+			foreach ( $this->inputs as $input ) {
+				$index = (string) $input['id'];
+				if ( ! rgempty( $index, $entry ) ) {
+					$selected[] = GFCommon::selection_display( rgar( $entry, $index ), $this, rgar( $entry, 'currency' ), $use_text );
+				}
+			}
+
+			return implode( ', ', $selected );
+		} else {
+
+			return GFCommon::selection_display( rgar( $entry, $input_id ), $this, rgar( $entry, 'currency' ), $use_text );
+		}
+	}
+
 }
 
 GF_Fields::register( new GF_Field_Checkbox() );

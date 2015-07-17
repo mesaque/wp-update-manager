@@ -3,7 +3,7 @@
 Plugin Name: Gravity Forms
 Plugin URI: http://www.gravityforms.com
 Description: Easily create web forms and manage form entries within the WordPress admin.
-Version: 1.9.11.14
+Version: 1.9.12.2
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 Text Domain: gravityforms
@@ -112,10 +112,13 @@ add_action( 'plugins_loaded', array( 'GFForms', 'loaded' ) );
 
 class GFForms {
 
-	public static $version = '1.9.11.14';
+	public static $version = '1.9.12.2';
 
 	public static function loaded() {
 
+		/**
+		 * Fires when Gravity Forms has loaded. When developing Add-Ons, use this hook to initialize any functionality that depends on Gravity Forms functionality
+		 */
 		do_action( 'gform_loaded' );
 
 		//initializing Add-Ons if necessary
@@ -367,6 +370,7 @@ class GFForms {
 
 		if ( $current_version === false ){
 			// Turn background updates on by default for all new installations.
+			update_option( 'gform_pending_installation', true );
 			update_option( 'gform_enable_background_updates', true );
 		}
 
@@ -1920,6 +1924,11 @@ class GFForms {
 	}
 
 	public static function new_form() {
+
+		if ( self::maybe_display_installation_wizard() ) {
+			return;
+		};
+
 		self::form_list_page();
 	}
 
@@ -1939,6 +1948,11 @@ class GFForms {
 	}
 
 	public static function settings_page() {
+
+		if ( self::maybe_display_installation_wizard() ) {
+			return;
+		};
+
 		require_once( GFCommon::get_base_path() . '/settings.php' );
 		GFSettings::settings_page();
 	}
@@ -1954,6 +1968,11 @@ class GFForms {
 	}
 
 	public static function export_page() {
+
+		if ( self::maybe_display_installation_wizard() ) {
+			return;
+		};
+
 		require_once( GFCommon::get_base_path() . '/export.php' );
 		GFExport::export_page();
 	}
@@ -1964,6 +1983,10 @@ class GFForms {
 	}
 
 	public static function addons_page() {
+
+		if ( self::maybe_display_installation_wizard() ) {
+			return;
+		};
 
 		wp_print_styles( array( 'thickbox' ) );
 
@@ -2050,6 +2073,10 @@ class GFForms {
 
 	public static function all_leads_page() {
 
+		if ( self::maybe_display_installation_wizard() ) {
+			return;
+		};
+
 		$view    = rgget( 'view' );
 		$lead_id = rgget( 'lid' );
 
@@ -2075,6 +2102,10 @@ class GFForms {
 		if ( ! GFCommon::ensure_wp_version() ) {
 			return;
 		}
+
+		if ( self::maybe_display_installation_wizard() ) {
+			return;
+		};
 
 		$id   = RGForms::get( 'id' );
 		$view = RGForms::get( 'view' );
@@ -2825,6 +2856,11 @@ class GFForms {
 		$enabled = get_option( 'gform_enable_background_updates' );
 		GFCommon::log_debug( 'GFForms::is_auto_update_disabled() - $enabled: ' . var_export( $enabled, true ) );
 
+		/**
+		 * Filter to disable Gravity Forms Automatic updates
+		 *
+		 * @param bool $enabled Check if automatic updates are enabled, and then disable it
+		 */
 		$disabled = apply_filters( 'gform_disable_auto_update', ! $enabled );
 		GFCommon::log_debug( 'GFForms::is_auto_update_disabled() - $disabled: ' . var_export( $disabled, true ) );
 
@@ -3057,6 +3093,28 @@ class GFForms {
 			$a->enqueue_scripts( $form, $is_ajax );
 		}
 	}
+
+	/**
+	 * Displays the installation wizard on single site installations and on multisite
+	 *
+	 * @return bool Was the installation wizard displayed?
+	 */
+	public static function maybe_display_installation_wizard(){
+
+		if ( defined( 'GF_LICENSE_KEY' ) && is_multisite() && ! is_main_site() ) {
+			return false;
+		}
+
+		$pending_installation = get_option( 'gform_pending_installation' ) || isset( $_GET['gform_installation_wizard'] );
+
+		if ( $pending_installation ) {
+			require_once( GFCommon::get_base_path() . '/includes/wizard/class-gf-installation-wizard.php' );
+			$wizard = new GF_Installation_Wizard;
+			$result = $wizard->display();
+			return $result;
+		}
+	}
+
 
 }
 

@@ -183,11 +183,13 @@ class GFFormDisplay {
 		self::set_submission_if_null( $form_id, 'source_page_number', $source_page_number );
 
 		/**
-		 * Fires after the form process is complete (You can specify a form using the ID)
+		 * Fires after the form processing is completed. Form processing happens when submitting a page on a multi-page form (i.e. going to the "Next" or "Previous" page), or
+		 * when submitting a single page form.
 		 *
 		 * @param array $form The Form Object
-		 * @param int $page_number The Page Number, if a multi-page form is active
-		 * @param int $source_page_number The first page number if a multi-page form is active
+		 * @param int $page_number In a multi-page form, this variable contains the current page number.
+		 * @param int $source_page_number In a multi-page form, this parameters contains the number of the page that the submission came from.
+		 *                                For example, when clicking "Next" on page 1, this parameter will be set to 1. When clicking "Previous" on page 2, this parameter will be set to 2.
 		 */
 		gf_do_action( 'gform_post_process', $form['id'], $form, $page_number, $source_page_number );
 
@@ -981,6 +983,8 @@ class GFFormDisplay {
 		$save_button = rgars( $form, 'save/enabled' ) ? self::get_form_button( $form_id, "gform_save_{$form_id}", $form['save']['button'], rgars( $form, 'save/button/text' ), 'gform_save_link', rgars( $form, 'save/button/text' ), 0, "jQuery(\"#gform_save_{$form_id}\").val(1);" ) : '';
 
 		$footer .= $previous_button . ' ' . $button_input . ' ' . $save_button;
+
+		$tabindex = (int) $tabindex;
 
 		if ( $ajax ) {
 			$footer .= "<input type='hidden' name='gform_ajax' value='" . esc_attr( "form_id={$form_id}&amp;title={$display_title}&amp;description={$display_description}&amp;tabindex={$tabindex}" ) . "' />";

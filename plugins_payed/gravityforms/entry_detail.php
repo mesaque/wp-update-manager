@@ -150,6 +150,17 @@ class GFEntryDetail {
 						GFCommon::log_debug( __METHOD__ . '(): The WordPress phpmailer_init hook has been detected, usually used by SMTP plugins, it can impact mail delivery.' );
 					}
 
+					/**
+					 * Fires after a note is attached to an entry and sent as an email
+					 *
+					 * @param string $result The Error message or success message when the entry note is sent
+					 * @param string $email_to The email address to send the entry note to
+					 * @param string $email_from The email address from which the email is sent from
+					 * @param string $email_subject The subject of the email that is sent
+					 * @param mixed $body The Full body of the email containing the message after the note is sent
+					 * @param array $form The current form object
+					 * @param array $lead The Current lead object
+					 */
 					do_action( 'gform_post_send_entry_note', $result, $email_to, $email_from, $email_subject, $body, $form, $lead );
 				}
 				break;
@@ -769,7 +780,7 @@ class GFEntryDetail {
 								<?php esc_html_e( 'added on', 'gravityforms' ); ?> <?php echo esc_html( GFCommon::format_date( $note->date_created, false ) ) ?>
 							</p>
 						</div>
-						<div class="detail-note-content<?php echo $class ?>"><?php echo esc_html( $note->value ) ?></div>
+						<div class="detail-note-content<?php echo $class ?>"><?php echo nl2br( esc_html( $note->value ) ) ?></div>
 					</td>
 
 				</tr>
@@ -1068,6 +1079,13 @@ class GFEntryDetail {
 							<?php
 							}
 						}
+
+						/**
+						 * Fires at the Form Payment Details (The type of payment, the cost, the ID, etc)
+						 *
+						 * @param int $form['id'] The current Form ID
+						 * @param array $lead The current Lead object
+						 */
 						do_action( 'gform_payment_details', $form['id'], $lead );
 
 						?>

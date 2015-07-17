@@ -686,4 +686,19 @@ class GF_Field extends stdClass implements ArrayAccess {
 
 		return empty( $this->inputType ) ? $this->type : $this->inputType;
 	}
+
+	/**
+	 * @param array $entry The entry currently being processed.
+	 * @param string $input_id The field or input ID.
+	 * @param bool|false $use_text When processing choice based fields should the choice text be returned instead of the value.
+	 *
+	 * @return string
+	 */
+	public function get_value_export( $entry, $input_id = '', $use_text = false ) {
+		if ( empty( $input_id ) ) {
+			$input_id = $this->id;
+		}
+
+		return rgar( $entry, $input_id );
+	}
 }

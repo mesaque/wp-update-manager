@@ -1671,6 +1671,12 @@ class GFCommon {
 		if ( is_wp_error( $error ) ) {
 			GFCommon::log_error( 'GFCommon::send_email(): ' . $error->get_error_message() );
 			GFCommon::log_error( print_r( compact( 'to', 'subject', 'message' ), true ) );
+
+			/**
+			 * Fires when an email from Gravity Forms has failed to send
+			 *
+			 * @param string $error The Error message returned after the email fails to send
+			 */
 			do_action( 'gform_send_email_failed', $error, compact( 'from', 'to', 'bcc', 'reply_to', 'subject', 'message', 'from_name', 'message_format', 'attachments' ) );
 
 			return;
@@ -1721,6 +1727,21 @@ class GFCommon {
 
 		self::add_emails_sent();
 
+		/**
+		 * Fires after Gravity Forms has sent an email
+		 *
+		 * @param bool $is_success Check if the email was successfully sent
+		 * @param string $to The user Email to send to
+		 * @param string $subject The Subject of the email sent out
+		 * @param string $message The Message sent with a notification, alert, etc.
+		 * @param string $headers The email headers (the content-type and charset)
+		 * @param string $attachments The email attachments sent along
+		 * @param string $message_fomrat The Message format (HTML/Plain Text)
+		 * @param string $from Who the email is coming from
+		 * @param string $form_name The Name of the user who is associated with the from email
+		 * @param string $bcc The blind carbon copy which is an extra email that won't appear in the email header
+		 * @param string $reply_to A header that allows you to reply to another email
+		 */
 		do_action( 'gform_after_email', $is_success, $to, $subject, $message, $headers, $attachments, $message_format, $from, $from_name, $bcc, $reply_to );
 	}
 
@@ -2725,6 +2746,11 @@ class GFCommon {
 		$currency = get_option( 'rg_gforms_currency' );
 		$currency = empty( $currency ) ? 'USD' : $currency;
 
+		/**
+		 * Filter the currency for Gravity Form Product fields
+		 *
+		 * @param string $currency The currency string for products (USD, EUR, GPB, etc)
+		 */
 		return apply_filters( 'gform_currency', $currency );
 	}
 
@@ -3582,19 +3608,19 @@ class GFCommon {
 		$gf_vars['hide']                    = esc_html__( 'Hide', 'gravityforms' );
 		$gf_vars['all']                     = esc_html( _x( 'All', 'Conditional Logic', 'gravityforms' ) );
 		$gf_vars['any']                     = esc_html( _x( 'Any', 'Conditional Logic', 'gravityforms' ) );
-		$gf_vars['ofTheFollowingMatch']     = esc_html( 'of the following match:', 'gravityforms' );
-		$gf_vars['is']                      = esc_html( 'is', 'gravityforms' );
-		$gf_vars['isNot']                   = esc_html( 'is not', 'gravityforms' );
-		$gf_vars['greaterThan']             = esc_html( 'greater than', 'gravityforms' );
-		$gf_vars['lessThan']                = esc_html( 'less than', 'gravityforms' );
-		$gf_vars['contains']                = esc_html( 'contains', 'gravityforms' );
-		$gf_vars['startsWith']              = esc_html( 'starts with', 'gravityforms' );
-		$gf_vars['endsWith']                = esc_html( 'ends with', 'gravityforms' );
+		$gf_vars['ofTheFollowingMatch']     = esc_html__( 'of the following match:', 'gravityforms' );
+		$gf_vars['is']                      = esc_html__( 'is', 'gravityforms' );
+		$gf_vars['isNot']                   = esc_html__( 'is not', 'gravityforms' );
+		$gf_vars['greaterThan']             = esc_html__( 'greater than', 'gravityforms' );
+		$gf_vars['lessThan']                = esc_html__( 'less than', 'gravityforms' );
+		$gf_vars['contains']                = esc_html__( 'contains', 'gravityforms' );
+		$gf_vars['startsWith']              = esc_html__( 'starts with', 'gravityforms' );
+		$gf_vars['endsWith']                = esc_html__( 'ends with', 'gravityforms' );
 
-		$gf_vars['thisConfirmation']                 = esc_html( 'Use this confirmation if', 'gravityforms' );
-		$gf_vars['thisNotification']                 = esc_html( 'Send this notification if', 'gravityforms' );
-		$gf_vars['confirmationSave']                 = esc_html( 'Save', 'gravityforms' );
-		$gf_vars['confirmationSaving']               = esc_html( 'Saving...', 'gravityforms' );
+		$gf_vars['thisConfirmation']                 = esc_html__( 'Use this confirmation if', 'gravityforms' );
+		$gf_vars['thisNotification']                 = esc_html__( 'Send this notification if', 'gravityforms' );
+		$gf_vars['confirmationSave']                 = esc_html__( 'Save', 'gravityforms' );
+		$gf_vars['confirmationSaving']               = esc_html__( 'Saving...', 'gravityforms' );
 		$gf_vars['confirmationAreYouSure']           = __( 'Are you sure you wish to cancel these changes?', 'gravityforms' );
 		$gf_vars['confirmationIssueSaving']          = __( 'There was an issue saving this confirmation.', 'gravityforms' );
 		$gf_vars['confirmationConfirmDelete']        = __( 'Are you sure you wish to delete this confirmation?', 'gravityforms' );

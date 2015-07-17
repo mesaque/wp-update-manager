@@ -1191,31 +1191,6 @@ abstract class GFFeedAddOn extends GFAddOn {
 	}
 
 	//--------------- Notes ------------------
-	/**
-	 * Override this function to specify a custom avatar (i.e. the payment gateway logo) for entry notes created by the Add-On
-	 * @return  string - A fully qualified URL for the avatar
-	 */
-	public function note_avatar() {
-		return false;
-	}
-
-	public function notes_avatar( $avatar, $note ) {
-		if ( $note->user_name == $this->_short_title && empty( $note->user_id ) && $this->method_is_overridden( 'note_avatar', 'GFFeedAddOn' ) ) {
-			$new_avatar = $this->note_avatar();
-		}
-
-		return empty( $new_avatar ) ? $avatar : "<img alt='{$this->_short_title}' src='{$new_avatar}' class='avatar avatar-48' height='48' width='48' />";
-	}
-
-	public function add_note( $entry_id, $note, $note_type = null ) {
-
-		$user_id   = 0;
-		$user_name = $this->_short_title;
-
-		GFFormsModel::add_note( $entry_id, $user_id, $user_name, $note, $note_type );
-
-	}
-
 	protected function add_feed_error( $error_message, $feed, $entry, $form ) {
 
 		/* Log debug error before we prepend the error name. */
@@ -1292,6 +1267,10 @@ class GFAddOnFeedsTable extends WP_List_Table {
 
 	function prepare_items() {
 		$this->items = isset( $this->_feeds ) ? $this->_feeds : array();
+	}
+
+	function get_columns() {
+		return $this->_column_headers[0];
 	}
 
 	function get_bulk_actions() {

@@ -214,9 +214,9 @@ class GFFormDetail {
 			<div id="pagination_settings" style="display: none;">
 				<ul>
 					<li style="width:100px; padding:0px;">
-						<a href="#gform_pagination_settings_tab_1"><?php esc_html_e( 'Properties', 'gravityforms' ); ?></a></li>
+						<a href="#gform_pagination_settings_tab_1"><?php esc_html_e( 'General', 'gravityforms' ); ?></a></li>
 					<li style="width:100px; padding:0px;">
-						<a href="#gform_pagination_settings_tab_2"><?php esc_html_e( 'Advanced', 'gravityforms' ); ?></a></li>
+						<a href="#gform_pagination_settings_tab_2"><?php esc_html_e( 'Appearance', 'gravityforms' ); ?></a></li>
 				</ul>
 
 				<div id="gform_pagination_settings_tab_1">
@@ -337,7 +337,7 @@ class GFFormDetail {
 
 					<h4 class="gf_nofield_header gf_nofield_1">1. <?php esc_html_e( 'Select A Field Type', 'gravityforms' ); ?></h4>
 
-					<p><?php esc_html_e( 'Start by seleting a field type from the nifty floating panels on the right.', 'gravityforms' ); ?></p>
+					<p><?php esc_html_e( 'Start by selecting a field type from the nifty floating panels on the right.', 'gravityforms' ); ?></p>
 
 					<div id="gf_nofield_1_instructions">
 						<span class="gf_nofield_1_instructions_heading gf_tips"><?php esc_html_e( 'Start Over There', 'gravityforms' ); ?></span>
@@ -416,7 +416,7 @@ class GFFormDetail {
 			<div id="last_page_settings" style="display:none;">
 				<ul>
 					<li style="width:100px; padding:0px;">
-						<a href="#gform_last_page_settings_tab_1"><?php esc_html_e( 'Properties', 'gravityforms' ); ?></a></li>
+						<a href="#gform_last_page_settings_tab_1"><?php esc_html_e( 'General', 'gravityforms' ); ?></a></li>
 				</ul>
 				<div id="gform_last_page_settings_tab_1">
 					<ul class="gforms_form_settings">

@@ -80,6 +80,11 @@ class GFExport {
 					}
 				}
 
+				/**
+				 * Allows you to filter and modify the Export Form
+				 *
+				 * @param array $form Assign which Gravity Form to change the export form for
+				 */
 				$form = gf_apply_filters( 'gform_export_form', $form['id'], $form );
 
 			}
@@ -770,6 +775,14 @@ class GFExport {
 			$lines = '';
 		}
 
+		/**
+		 * Fires after exporting all the entries in form
+		 *
+		 * @param array $form The Form object to get the entries from
+		 * @param string $start_date The start date for when the export of entries should take place
+		 * @param string $end_date The end date for when the export of entries should stop
+		 * @param array $fields The specified fields where the entries should be exported from
+		 */
 		do_action( 'gform_post_export_entries', $form, $start_date, $end_date, $fields );
 
 	}

@@ -471,6 +471,35 @@ class GF_Field_List extends GF_Field {
 		$this->maxRows = absint( $this->maxRows );
 	}
 
+	public function get_value_export( $entry, $input_id = '', $use_text = false ) {
+		if ( empty( $input_id ) ) {
+			$input_id = $this->id;
+		} elseif ( ! ctype_digit( $input_id ) ) {
+			$field_id_array = explode( '.', $input_id );
+			$input_id       = rgar( $field_id_array, 0 );
+			$column_num     = rgar( $field_id_array, 1 );
+		}
+
+		$value = rgar( $entry, $input_id );
+		if ( empty( $value ) ) {
+			return '';
+		}
+
+		$list_values = $column_values = unserialize( $value );
+
+		if ( ! empty( $column_num ) && $this->enableColumns ) {
+			$column        = rgars( $this->choices, "{$column_num}/text" );
+			$column_values = array();
+			foreach ( $list_values as $value ) {
+				$column_values[] = rgar( $value, $column );
+			}
+		} elseif ( $this->enableColumns ) {
+			return $value;
+		}
+
+		return GFCommon::implode_non_blank( ', ', $column_values );
+	}
+
 }
 
 GF_Fields::register( new GF_Field_List() );
