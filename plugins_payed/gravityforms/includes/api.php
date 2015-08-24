@@ -547,7 +547,9 @@ class GFAPI {
 	public static function update_entries( $entries ) {
 
 		foreach ( $entries as $entry ) {
-			$result = self::update_entry( $entry, $entry['id'] );
+			$entry_id = rgar( $entry, 'id' );
+			GFCommon::log_debug( 'Updating entry ' . $entry_id );
+			$result = self::update_entry( $entry, $entry_id );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
@@ -572,7 +574,9 @@ class GFAPI {
 		global $wpdb;
 
 		if ( empty( $entry_id ) ) {
-			$entry_id = absint( $entry['id'] );
+			if ( rgar( $entry, 'id' ) ) {
+				$entry_id = absint( $entry['id'] );
+			}
 		} else {
 			$entry['id'] = absint( $entry_id );
 		}
@@ -630,8 +634,7 @@ class GFAPI {
 		$transaction_type = isset( $entry['transaction_type'] ) ? intval( $entry['transaction_type'] ) : 'NULL';
 
 		$lead_table = GFFormsModel::get_lead_table_name();
-		$result     = $wpdb->query(
-			$wpdb->prepare(
+		$sql = $wpdb->prepare(
 				"
                 UPDATE $lead_table
                 SET
@@ -656,8 +659,8 @@ class GFAPI {
                 WHERE
                 id = %d
                 ", $form_id, $is_starred, $is_read, $ip, $source_url, $user_agent, $currency, $status, $payment_method, $entry_id
-			)
 		);
+		$result     = $wpdb->query( $sql );
 		if ( false === $result ) {
 			return new WP_Error( 'update_entry_properties_failed', __( 'There was a problem while updating the entry properties', 'gravityforms' ), $wpdb->last_error );
 		}
@@ -740,12 +743,12 @@ class GFAPI {
 		}
 
 		/**
-		 * Fires after the Entry is updated
+		 * Fires after the Entry is updated.
 		 *
-		 * @param array $entry    The new Entry object
-		 * @param array $original_entry    The Original Entry object
+		 * @param array $lead The entry object after being updated.
+		 * @param array $original_entry The entry object before being updated.
 		 */
-		do_action( 'gform_post_update_entry', $entry, $original_entry );
+		gf_do_action( 'gform_post_update_entry', $form_id, $entry, $original_entry );
 
 		return true;
 	}

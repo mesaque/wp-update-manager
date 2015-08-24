@@ -117,14 +117,14 @@ class GF_Field_MultiSelect extends GF_Field {
 		}
 	}
 
-	public function get_value_export( $entry, $input_id = '', $use_text = false ) {
+	public function get_value_export( $entry, $input_id = '', $use_text = false, $is_csv = false ) {
 		if ( empty( $input_id ) ) {
 			$input_id = $this->id;
 		}
 
 		$value  = rgar( $entry, $input_id );
 
-		if ( ! empty( $value ) ) {
+		if ( ! empty( $value ) && ! $is_csv ) {
 			$items = explode( ',', $value );
 
 			foreach ( $items as &$item ) {

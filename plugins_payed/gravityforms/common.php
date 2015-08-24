@@ -184,6 +184,11 @@ class GFCommon {
 </IfModule>';
 	    $rules = explode( "\n", $txt );
 
+	    /**
+	     * A filter to allow the modification/disabling of parsing certain PHP within Gravity Forms
+	     *
+	     * @param mixed $rules The Rules of what to parse or not to parse
+	     */
 	    $rules = apply_filters( 'gform_upload_root_htaccess_rules', $rules );
 	    if ( ! empty( $rules ) ) {
 		    if ( ! function_exists( 'insert_with_markers' ) ) {
@@ -1727,21 +1732,7 @@ class GFCommon {
 
 		self::add_emails_sent();
 
-		/**
-		 * Fires after Gravity Forms has sent an email
-		 *
-		 * @param bool $is_success Check if the email was successfully sent
-		 * @param string $to The user Email to send to
-		 * @param string $subject The Subject of the email sent out
-		 * @param string $message The Message sent with a notification, alert, etc.
-		 * @param string $headers The email headers (the content-type and charset)
-		 * @param string $attachments The email attachments sent along
-		 * @param string $message_fomrat The Message format (HTML/Plain Text)
-		 * @param string $from Who the email is coming from
-		 * @param string $form_name The Name of the user who is associated with the from email
-		 * @param string $bcc The blind carbon copy which is an extra email that won't appear in the email header
-		 * @param string $reply_to A header that allows you to reply to another email
-		 */
+
 		do_action( 'gform_after_email', $is_success, $to, $subject, $message, $headers, $attachments, $message_format, $from, $from_name, $bcc, $reply_to );
 	}
 
@@ -2439,6 +2430,14 @@ class GFCommon {
 			// if the filter is used to disable this, product fields are displayed in the section like other fields
 			if ( self::is_product_field( $field['type'] ) ) {
 
+				/**
+				 * By default, product fields are not displayed in their containing section (displayed in a product summary table). If the filter is used to disable this, product fields are displayed in the section like other fields
+				 *
+				 * @param array $field The Form Fields Object
+				 * @param array $form The Form Object
+				 * @param array $entry The Entry object
+				 *
+				 */
 				$display_product_summary = apply_filters( 'gform_display_product_summary', true, $field, $form, $entry );
 
 				$is_field_displayed_in_section = ! $display_product_summary;
@@ -2669,7 +2668,13 @@ class GFCommon {
 	}
 
 	public static function get_disallowed_file_extensions() {
-		return array( 'php', 'asp', 'aspx', 'cmd', 'csh', 'bat', 'html', 'hta', 'jar', 'exe', 'com', 'js', 'lnk', 'htaccess', 'phtml', 'ps1', 'ps2', 'php3', 'php4', 'php5', 'php6', 'py', 'rb', 'tmp' );
+
+		$extensions = array( 'php', 'asp', 'aspx', 'cmd', 'csh', 'bat', 'html', 'hta', 'jar', 'exe', 'com', 'js', 'lnk', 'htaccess', 'phtml', 'ps1', 'ps2', 'php3', 'php4', 'php5', 'php6', 'py', 'rb', 'tmp' );
+
+		// Intended for internal use - not to be included in the documentation.
+		$extensions = apply_filters( 'gform_disallowed_file_extensions', $extensions );
+
+		return $extensions;
 	}
 
 	public static function match_file_extension( $file_name, $extensions ) {
@@ -2746,11 +2751,6 @@ class GFCommon {
 		$currency = get_option( 'rg_gforms_currency' );
 		$currency = empty( $currency ) ? 'USD' : $currency;
 
-		/**
-		 * Filter the currency for Gravity Form Product fields
-		 *
-		 * @param string $currency The currency string for products (USD, EUR, GPB, etc)
-		 */
 		return apply_filters( 'gform_currency', $currency );
 	}
 
@@ -2920,7 +2920,7 @@ class GFCommon {
 				$shipping_price    = RGFormsModel::get_lead_field_value( $lead, $shipping_field[0] );
 				$shipping_name     = $shipping_field[0]['label'];
 				$shipping_field_id = $shipping_field[0]['id'];
-				if ( $shipping_field[0]['inputType'] != 'singleshipping' ) {
+				if ( $shipping_field[0]['inputType'] != 'singleshipping' && ! empty( $shipping_price ) ) {
 					list( $shipping_method, $shipping_price ) = explode( '|', $shipping_price );
 					$shipping_name = $shipping_field[0]['label'] . " ($shipping_method)";
 				}
@@ -3403,6 +3403,12 @@ class GFCommon {
 
 		$form_id = $is_admin ? rgget( 'id' ) : $field->formId;
 
+		/**
+		 * Allows you to filter (modify) the post cateogry choices when using post fields
+		 *
+		 * @param array $field The Cateogry choices field
+		 * @param int $form_id The CUrrent form ID
+		 */
 		$field->choices = gf_apply_filters( 'gform_post_category_choices', array(
 			$form_id,
 			$field->id
@@ -3821,7 +3827,7 @@ class GFCommon {
 					$sub_filters[]                 = $sub_filter;
 				}
 				$field_filter['filters'] = $sub_filters;
-			} elseif ( $input_type == 'name' && $field->nameFormat == '' || $input_type == 'address' ) {
+			} elseif ( ( $input_type == 'name' && $field->nameFormat !== '' && $field->nameFormat !== 'simple') || $input_type == 'address' ) {
 				// standard two input name field
 				$field_filter['key']   = $key;
 				$field_filter['group'] = true;

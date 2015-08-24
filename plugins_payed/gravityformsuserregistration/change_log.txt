@@ -1,16 +1,26 @@
 -----------------------------------------------------------
-Version 2.3.3
-    - Fixed an issue with username and email validation not taking pending activations into account.
+Version 2.4
+    - Added some logging statements to prepare_buddypress_data().
+    - Added the 'gform_userregistration_enable_multisite_section' filter allowing the user to force activation of multisite section of feed settings network-wide.
+        add_filter('gform_user_registration_enable_multisite_section', '__return_true');
+    - Added the 'gform_user_registration_feed_conditional_logic' filter enabling the feed conditional logic rule to be overridden during submission, allowing multiple rules to be defined.
+        add_filter( 'gform_user_registration_feed_conditional_logic', function( $logic, $form, $config ) {
+            $logic['rules'][] = array(
+                'fieldId'  => '5',
+                'operator' => 'is',
+                'value'    => 'Register',
+            );
 
------------------------------------------------------------
-Version 2.3.2
+            return $logic;
+        }, 10, 3 );
+    - Fixed an issue with username and email validation not taking pending activations into account.
     - Fixed an issue with the activation URL sent by email.
     - Fixed a PHP notice related to the blog signup notification message.
-
------------------------------------------------------------
-Version 2.3.1
     - Fixed a PHP notice caused by a typo in the third parameter of the gform_user_registration_user_data_pre_populate filter.
     - Fixed an issue with the processing of user meta where the field has been hidden by conditional logic.
+    - Fixed typo in gform_user_registration_enable_multisite_section filter name. 
+    - Fixed db table error on feed list page due to the table not being created.
+    - Fixed WP_List_Tables error in WordPress 4.3 for pending activations.
 
 -----------------------------------------------------------
 Version 2.3

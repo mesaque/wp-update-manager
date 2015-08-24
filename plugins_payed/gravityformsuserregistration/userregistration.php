@@ -3,7 +3,7 @@
 Plugin Name: Gravity Forms User Registration Add-On
 Plugin URI: http://www.gravityforms.com
 Description: Allows WordPress users to be automatically created upon submitting a Gravity Form
-Version: 2.3.3
+Version: 2.4
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 
@@ -35,7 +35,7 @@ class GFUser {
     private static $path = "gravityformsuserregistration/userregistration.php";
     private static $url = "http://www.gravityforms.com";
     private static $slug = "gravityformsuserregistration";
-    private static $version = "2.3.3";
+    private static $version = "2.4";
     private static $min_gravityforms_version = "1.7";
     private static $supported_fields = array( "checkbox", "radio", "select", "text", "website", "textarea", "email", "hidden", "number", "phone", "multiselect", "post_title",
 		                                      "post_tags", "post_custom_field", "post_content", "post_excerpt" );
@@ -1814,6 +1814,8 @@ class GFUser {
         if(empty($buddypress_meta))
             return;
 
+        self::log_debug( __METHOD__ . '(): starting.');
+
         $form = RGFormsModel::get_form_meta($entry['form_id']);
         $buddypress_row = array();
 
@@ -1858,6 +1860,8 @@ class GFUser {
                 $meta_value = self::get_prepared_value($gform_field, $meta_item['meta_value'], $entry);
             }
 
+            self::log_debug( __METHOD__ . "(): Meta item: {$meta_item['meta_name']}. Value: {$meta_value}" );
+
             $buddypress_row[$i]['value'] = $meta_value;
             $buddypress_row[$i]['last_update'] = date( 'Y-m-d H:i:s' );
             $buddypress_row[$i]['field'] = $bp_field;
@@ -1866,6 +1870,9 @@ class GFUser {
         }
 
         GFUserData::insert_buddypress_data($buddypress_row);
+
+        self::log_debug( __METHOD__ . '(): finished.' );
+
     }
 
     /**
@@ -1892,8 +1899,22 @@ class GFUser {
         $multisite_options = rgar( $config['meta'], 'multisite_options' );
         $root_role = rgar( $multisite_options, 'root_role' );
 
-        if(!self::is_root_site())
-            return;
+		/**
+		 * Allows the user to force activation of multisite section of feed settings network-wide.
+		 *
+		 * @since 2.3.5
+		 *
+		 * @param type bool self::is_root_site() Returns true if we're in the main site of the network
+		 *
+		 * @return bool 
+		 */
+
+		$enable_multisite_section = apply_filters( 'gform_user_registration_enable_multisite_section', self::is_root_site() );
+
+		if ( ! is_multisite() || ! $enable_multisite_section ) {
+
+			return;
+		}
 
         ?>
 
@@ -2600,32 +2621,43 @@ class GFUser {
         return rgars($config, "meta/$meta_key");
     }
 
-    public static function registration_condition_met($form, $config) {
+    public static function registration_condition_met( $form, $config, $entry ) {
 
-        $config = $config["meta"];
+        self::log_debug( __METHOD__ . '(): Evaluating conditional logic.' );
 
-        $operator = isset($config["reg_condition_operator"]) ? $config["reg_condition_operator"] : "";
-        $field = RGFormsModel::get_field($form, $config["reg_condition_field_id"]);
+        $config = $config['meta'];
 
-        if(empty($field) || !$config["reg_condition_enabled"])
+        if ( ! $config['reg_condition_enabled'] ) {
+            self::log_debug( __METHOD__ . '(): Conditional logic not enabled for this feed.' );
+
             return true;
+        }
 
-        $is_visible = !RGFormsModel::is_field_hidden($form, $field, array());
-        $field_value = RGFormsModel::get_field_value($field, array());
+        $logic = array(
+            'logicType' => 'all',
+            'rules'     => array(
+                array(
+                    'fieldId'  => rgar( $config, 'reg_condition_field_id' ),
+                    'operator' => rgar( $config, 'reg_condition_operator' ),
+                    'value'    => rgar( $config, 'reg_condition_value' ),
+                ),
+            )
+        );
 
-        $is_value_match = RGFormsModel::is_value_match($field_value, $config["reg_condition_value"], $operator);
-        $create_user = $is_value_match && $is_visible;
+        $logic          = apply_filters( 'gform_user_registration_feed_conditional_logic', $logic, $form, $config );
+        $is_value_match = GFCommon::evaluate_conditional_logic( $logic, $form, $entry );
+        self::log_debug( __METHOD__ . '(): Result: ' . var_export( $is_value_match, 1 ) );
 
-        return $create_user;
+        return $is_value_match;
     }
 
     public static function user_registration_validation( $validation_result ){
 
-        $form = $validation_result['form'];
-        $config = self::get_active_config($form);
-        $is_update_feed = rgars($config, 'meta/feed_type') == 'update';
-        $pagenum = rgpost( "gform_source_page_number_{$form['id']}" );
-        $entry = self::convert_post_to_entry();
+        $form           = $validation_result['form'];
+        $entry          = self::convert_post_to_entry();
+        $config         = self::get_active_config( $form, $entry );
+        $is_update_feed = rgars( $config, 'meta/feed_type' ) == 'update';
+        $pagenum        = rgpost( "gform_source_page_number_{$form['id']}" );
 
         // if there is no registration feed or the registration condition is not met or feed is inactive, abandon ship
         if( !$config || !self::registration_condition_met( $form, $config, $entry ) || !$config['is_active'] )
@@ -3141,26 +3173,27 @@ class GFUser {
         return $config[0]; //only one feed per form is supported
     }
 
-    public static function get_active_config($form, $lead = false){
-        require_once(self::get_base_path() . "/data.php");
+    public static function get_active_config( $form, $lead = false ) {
+        require_once( self::get_base_path() . "/data.php" );
 
         $config = false;
 
         // if lead is provided, attempt to retrieve config from lead meta
-        if($lead) {
-            $config_id = gform_get_meta($lead['id'], 'user_registration_feed_id');
-            $config = GFUserData::get_feed($config_id);
+        if ( isset( $lead['id'] ) ) {
+            $config_id = gform_get_meta( $lead['id'], 'user_registration_feed_id' );
+            $config    = GFUserData::get_feed( $config_id );
         }
 
         // if no lead is provided or if meta retrieval fails, get all feeds and find the first feed that matches
-        if(!$config) {
+        if ( ! $config ) {
 
-            $configs = GFUserData::get_feeds_by_form($form["id"]);
-            if(!$configs)
+            $configs = GFUserData::get_feeds_by_form( $form["id"] );
+            if ( ! $configs ) {
                 return false;
+            }
 
-            foreach($configs as $cnfg) {
-                if(self::registration_condition_met($form, $cnfg)) {
+            foreach ( $configs as $cnfg ) {
+                if ( self::registration_condition_met( $form, $cnfg, $lead ) ) {
                     $config = $cnfg;
                     break;
                 }
@@ -3169,11 +3202,13 @@ class GFUser {
         }
 
         // if lead is provided and a config is found, update lead meta with config ID
-        if($lead && $config && !$config_id)
-            gform_update_meta($lead['id'], 'user_registration_feed_id', $config['id']);;
+        if ( isset( $lead['id'] ) && $config && ! $config_id ) {
+            gform_update_meta( $lead['id'], 'user_registration_feed_id', $config['id'] );
+        };
 
-        if($config)
+        if ( $config ) {
             return $config;
+        }
 
         return false;
     }
