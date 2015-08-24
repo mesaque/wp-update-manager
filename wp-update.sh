@@ -22,7 +22,9 @@ tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/
 
 ### manage backup 
 cd $basedir/bkp
-backup_files=$(ls --time-style=+%F_%Hh%M | xargs readlink -f)
+ls --time-style=+%F_%Hh%M *tgz >> listfiles
+backup_files=$( while read i ; do echo `pwd`/$i; done < listfiles)
+rm listfiles
 count_files=$(echo "$backup_files" | wc -l)
 [ "$count_files" -gt 2 ] && {
         count_to_remove=$( expr $count_files - 2 )
