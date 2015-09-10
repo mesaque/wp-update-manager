@@ -52,6 +52,8 @@ plugins_list=$(cd $WordPressPath; php $basedir/lib/wp-cli.phar plugin list)
 ###begin update script by wp-cli
 cd  $WordPressPath
 php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
+php $basedir/lib/wp-cli.phar core update-db &> $basedir/coreUpdate_db.log
+php $basedir/lib/wp-cli.phar theme update --all &> $basedir/themesUpdate.log
 php $basedir/lib/wp-cli.phar plugin update --all &> $basedir/pluginsUpdate.log
 [ $? != 0 ] && {
 	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
