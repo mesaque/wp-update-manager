@@ -64,7 +64,7 @@ wpResult=$( cat $basedir/coreUpdate.log | sed 's/^[^U].*$//;s/Us.*$//' )
 [ "$wpResult" ] && echo "WordPress is $wpResult" >> $log
 
 #handle log from free plugins
-pluginResult=$(cat $basedir/pluginsUpdate.log | sed '1,/Success/ d' | sed 's/^nam.*$//;s/^Suc.*$//')
+pluginResult=$(cat $basedir/pluginsUpdate.log | sed '1,/Success/ d' | sed 's/^nam.*$//;s/^Suc.*$//;/Ativando Modo de Manutenção.*$/,$d' )
 linePluginCount=$(echo "$pluginResult" | wc -l);
 [ $linePluginCount -gt 1 ] && echo "$pluginResult" >> $log 
 
