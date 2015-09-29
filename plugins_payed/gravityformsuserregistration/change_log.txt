@@ -1,4 +1,14 @@
 -----------------------------------------------------------
+Version 2.4.2
+
+    - Added "gform_user_registration_check_email_pre_signup_activation" filter for allowing the user to disable the check for an email being already used by a registered user.
+        add_filter( 'gform_user_registration_check_email_pre_signup_activation', '__return_false' );
+        
+-----------------------------------------------------------
+Version 2.4.1
+	- Fixed issue where password wasn't getting sent via email.
+
+-----------------------------------------------------------
 Version 2.4
     - Added some logging statements to prepare_buddypress_data().
     - Added the 'gform_userregistration_enable_multisite_section' filter allowing the user to force activation of multisite section of feed settings network-wide.

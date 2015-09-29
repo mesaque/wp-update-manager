@@ -3,7 +3,7 @@
 Plugin Name: Gravity Forms User Registration Add-On
 Plugin URI: http://www.gravityforms.com
 Description: Allows WordPress users to be automatically created upon submitting a Gravity Form
-Version: 2.4
+Version: 2.4.2
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 
@@ -35,7 +35,7 @@ class GFUser {
     private static $path = "gravityformsuserregistration/userregistration.php";
     private static $url = "http://www.gravityforms.com";
     private static $slug = "gravityformsuserregistration";
-    private static $version = "2.4";
+    private static $version = "2.4.2";
     private static $min_gravityforms_version = "1.7";
     private static $supported_fields = array( "checkbox", "radio", "select", "text", "website", "textarea", "email", "hidden", "number", "phone", "multiselect", "post_title",
 		                                      "post_tags", "post_custom_field", "post_content", "post_excerpt" );
@@ -4114,7 +4114,31 @@ class GFUser {
 }
 
 
+if ( ! function_exists( 'wp_new_user_notification' ) ){
+// ----------- Forked from WP < 4.3.1, when password parameter was deprecated. ---------------
+function wp_new_user_notification( $user_id, $plaintext_pass = '' ) {
+	$user = get_userdata( $user_id );
 
+	// The blogname option is escaped with esc_html on the way into the database in sanitize_option
+	// we want to reverse this for the plain text arena of emails.
+	$blogname = wp_specialchars_decode(get_option('blogname'), ENT_QUOTES);
+
+	$message  = sprintf(__('New user registration on your site %s:'), $blogname) . "\r\n\r\n";
+	$message .= sprintf(__('Username: %s'), $user->user_login) . "\r\n\r\n";
+	$message .= sprintf(__('E-mail: %s'), $user->user_email) . "\r\n";
+
+	@wp_mail(get_option('admin_email'), sprintf(__('[%s] New User Registration'), $blogname), $message);
+
+	if ( empty($plaintext_pass) )
+		return;
+
+	$message  = sprintf(__('Username: %s'), $user->user_login) . "\r\n";
+	$message .= sprintf(__('Password: %s'), $plaintext_pass) . "\r\n";
+	$message .= wp_login_url() . "\r\n";
+
+	wp_mail($user->user_email, sprintf(__('[%s] Your username and password'), $blogname), $message);
+}
+}
 
 
 if(!function_exists("rgget")){

@@ -192,7 +192,18 @@ class GFUserSignups {
         	$signup->set_as_activated();
         	return new WP_Error('user_already_exists', __( 'That username is already activated.' ), $signup);
         }
-        if (email_exists($signup->user_email)){
+
+		/**
+		 * Allows to the user to disable the check to see if the email is being already used by a previously registered user.
+		 *
+		 * @since 2.4.2
+		 *
+		 * @param type bool $check_email Set to false to disable the email checking
+		 */
+
+        $check_email= apply_filters("gform_user_registration_check_email_pre_signup_activation", true);
+
+        if ( $check_email && email_exists($signup->user_email) ){
         	//email address already exists, return error message
         	return new WP_Error('email_already_exists', __( 'Sorry, that email address is already used!' ), $signup);
         }
