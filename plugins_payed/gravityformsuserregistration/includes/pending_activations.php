@@ -249,8 +249,8 @@ class GFUserPendingActivationsList extends WP_List_Table {
             
             $lead = RGFormsModel::get_lead(rgar($signup_meta, 'lead_id'));
             
-            //if(!$lead)
-                //continue;
+            if(!$lead)
+                continue;
             
             $form_id = $lead['form_id'];
             $form = rgar($forms, $form_id) ? rgar($forms, $form_id) : RGFormsModel::get_form_meta($form_id);

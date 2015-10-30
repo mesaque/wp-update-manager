@@ -1,4 +1,13 @@
 -----------------------------------------------------------
+Version 2.4.4
+    - Fixed an issue with passwords containing quotes.
+    - Fixed an issue with encryption/decryption when mcrypt isn't available.
+
+-----------------------------------------------------------
+Version 2.4.3
+    - Fixed an issue with the pending activations page including blank rows for signups which do not have an associated GF entry.
+
+-----------------------------------------------------------
 Version 2.4.2
 
     - Added "gform_user_registration_check_email_pre_signup_activation" filter for allowing the user to disable the check for an email being already used by a registered user.

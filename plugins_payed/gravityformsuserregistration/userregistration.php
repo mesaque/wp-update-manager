@@ -3,7 +3,7 @@
 Plugin Name: Gravity Forms User Registration Add-On
 Plugin URI: http://www.gravityforms.com
 Description: Allows WordPress users to be automatically created upon submitting a Gravity Form
-Version: 2.4.2
+Version: 2.4.4
 Author: rocketgenius
 Author URI: http://www.rocketgenius.com
 
@@ -35,7 +35,7 @@ class GFUser {
     private static $path = "gravityformsuserregistration/userregistration.php";
     private static $url = "http://www.gravityforms.com";
     private static $slug = "gravityformsuserregistration";
-    private static $version = "2.4.2";
+    private static $version = "2.4.4";
     private static $min_gravityforms_version = "1.7";
     private static $supported_fields = array( "checkbox", "radio", "select", "text", "website", "textarea", "email", "hidden", "number", "phone", "multiselect", "post_title",
 		                                      "post_tags", "post_custom_field", "post_content", "post_excerpt" );
@@ -2297,7 +2297,7 @@ class GFUser {
 
             $user_data['password'] = wp_generate_password();
             self::log_debug("calling wp_create_user for login " . $user_data['user_login'] . " with email " . $user_data['user_email']);
-            $user_id = wp_create_user($user_data['user_login'], $user_data['password'], $user_data['user_email']);
+            $user_id = wp_create_user($user_data['user_login'], addslashes($user_data['password']), $user_data['user_email']);
 
             if(is_wp_error($user_id))
                 return false;
@@ -2308,7 +2308,7 @@ class GFUser {
         }
         else if(!$user_id) {
 			self::log_debug("calling wp_create_user for login " . $user_data['user_login'] . " with email " . $user_data['user_email']);
-            $user_id = wp_create_user($user_data['user_login'], $user_data['password'], $user_data['user_email']);
+            $user_id = wp_create_user($user_data['user_login'], addslashes($user_data['password']), $user_data['user_email']);
             if(is_wp_error($user_id))
                 return false;
 
@@ -4074,42 +4074,12 @@ class GFUser {
     }
 
 
-
-	//TODO: remove this when GFCommon has an updated version of encrypt() and decrypt() supporting encryption via mysql
 	public static function encrypt( $text ) {
-		$use_mcrypt = apply_filters('gform_use_mcrypt', function_exists( 'mcrypt_encrypt' ) );
-
-		if ( $use_mcrypt ){
-			$iv_size = mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB );
-			$key = substr( md5( wp_salt( 'nonce' ) ), 0, $iv_size );
-
-			$encrypted_value = trim( base64_encode( mcrypt_encrypt( MCRYPT_RIJNDAEL_256, $key, $text, MCRYPT_MODE_ECB, mcrypt_create_iv( $iv_size, MCRYPT_RAND ) ) ) );
-		}
-		else{
-			global $wpdb;
-			$encrypted_value = base64_encode( $wpdb->get_var( $wpdb->prepare('SELECT AES_ENCRYPT(%s, %s) AS data', $text, wp_salt( 'nonce' ) ) ) );
-		}
-
-		return $encrypted_value;
+		return GFCommon::encrypt( $text );
 	}
 
-	//TODO: remove this when GFCommon has an updated version of encrypt() and decrypt() supporting encryption via mysql
 	public static function decrypt( $text ) {
-
-		$use_mcrypt = apply_filters('gform_use_mcrypt', function_exists( 'mcrypt_decrypt' ) );
-
-		if ( $use_mcrypt ){
-			$iv_size = mcrypt_get_iv_size( MCRYPT_RIJNDAEL_256, MCRYPT_MODE_ECB );
-			$key = substr( md5( wp_salt( 'nonce' ) ), 0, $iv_size );
-
-			$decrypted_value = trim( mcrypt_decrypt( MCRYPT_RIJNDAEL_256, $key, base64_decode( $text ), MCRYPT_MODE_ECB, mcrypt_create_iv( $iv_size, MCRYPT_RAND ) ) );
-		}
-		else{
-			global $wpdb;
-			$decrypted_value = $wpdb->get_var( $wpdb->prepare('SELECT AES_DECRYPT(%s, %s) AS data', base64_decode( $text ), wp_salt( 'nonce' ) ) );
-		}
-
-		return $decrypted_value;
+		return GFCommon::decrypt( $text );
 	}
 }
 
