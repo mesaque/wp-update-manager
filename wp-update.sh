@@ -5,11 +5,6 @@ basedir=$( which $0 |  sed "s/\/$basename//g");
 log=$basedir/status.log
 rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_db.log $basedir/themesUpdate.log $basedir/pluginsUpdate.log &> /dev/null
 
-[ "$update_options" ] || {
-	echo "variable update_option not find in app.conf";
-	exit;
-}
-
 #try auto-update
 [ "$1" ] || {
 	cd $basedir/; git pull origin master
@@ -20,6 +15,12 @@ rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_d
 [ ! -d $basedir/bkp ] && mkdir $basedir/bkp
 
 source $basedir/app.conf
+
+[ "$update_options" ] || {
+        echo "variable update_option not find in app.conf";
+        exit;
+}
+
 
 ###handle backup### 
 tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath &> /dev/null
