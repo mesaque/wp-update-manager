@@ -14,3 +14,7 @@ export tar_custom_excludes=''
 export bot_user_name=''
 export bot_avatar=''
 export slack_web_hook_url=''
+
+#options
+#if you dont want update the theme you cant take it from this var... the result will be: export update_options='plugins core'
+export update_options='themes plugins core'
