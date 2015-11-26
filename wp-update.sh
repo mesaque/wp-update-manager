@@ -3,8 +3,12 @@
 basename=$(basename $0);
 basedir=$( which $0 |  sed "s/\/$basename//g");
 log=$basedir/status.log
-rm $log &> /dev/null
-rm $basedir/plugins_payed.log &> /dev/null
+rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_db.log $basedir/themesUpdate.log $basedir/pluginsUpdate.log &> /dev/null
+
+[ "$update_options" ] || {
+	echo "variable update_option not find in app.conf";
+	exit;
+}
 
 #try auto-update
 [ "$1" ] || {
@@ -51,14 +55,22 @@ plugins_list=$(cd $WordPressPath; php $basedir/lib/wp-cli.phar plugin list)
 }
 ###begin update script by wp-cli
 cd  $WordPressPath
-php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
-php $basedir/lib/wp-cli.phar core update-db &> $basedir/coreUpdate_db.log
-php $basedir/lib/wp-cli.phar theme update --all &> $basedir/themesUpdate.log
-php $basedir/lib/wp-cli.phar plugin update --all &> $basedir/pluginsUpdate.log
-[ $? != 0 ] && {
+echo $update_options | grep core &> /dev/null
+[ $? == 0 ] && {
+	php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
+	php $basedir/lib/wp-cli.phar core update-db &> $basedir/coreUpdate_db.log
+}
+echo $update_options | grep themes &> /dev/null
+[ $? == 0 ] && {
+	php $basedir/lib/wp-cli.phar theme update --all &> $basedir/themesUpdate.log
+}
+echo $update_options | grep plugins &> /dev/null
+if [ $? == 0 ]; then
+	php $basedir/lib/wp-cli.phar plugin update --all &> $basedir/pluginsUpdate.log
+else
 	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
 	exit 1
-}
+fi
 #handle log from WordPress Update
 wpResult=$( cat $basedir/coreUpdate.log | sed 's/^[^U].*$//;s/Us.*$//' )
 [ "$wpResult" ] && echo "WordPress is $wpResult" >> $log
