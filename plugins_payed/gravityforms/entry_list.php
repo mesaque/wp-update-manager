@@ -30,7 +30,7 @@ class GFEntryList {
 			 *
 			 * Echoed content would appear above the page title.
 			 *
-			 * int $form_id The ID of the form the entry list is being displayed for.
+			 * @param int $form_id The ID of the form that the entry list is being displayed for.
 			 */
 			do_action( 'gform_pre_entry_list', $form_id );
 
@@ -41,7 +41,7 @@ class GFEntryList {
 			 *
 			 * Echoed content would appear after the bulk actions/paging links below the entry list table.
 			 *
-			 * int $form_id The ID of the form the entry list is being displayed for.
+			 * @param int $form_id The ID of the form that the entry list is being displayed for.
 			 */
 			do_action( 'gform_post_entry_list', $form_id );
 		}
@@ -110,6 +110,16 @@ class GFEntryList {
 			);
 
 		}
+
+		/**
+		 * Allow the entry list search criteria to be overridden.
+		 *
+		 * @since  1.9.14.30
+		 *
+		 * @param array $search_criteria An array containing the search criteria.
+		 * @param int $form_id The ID of the current form.
+		 */
+		$search_criteria = gf_apply_filters( array( 'gform_search_criteria_entry_list', $form_id ), $search_criteria, $form_id );
 
 		$update_message = '';
 		switch ( $action ) {
@@ -199,6 +209,8 @@ class GFEntryList {
 		if ( rgpost( 'button_delete_permanently' ) ) {
 			if ( GFCommon::current_user_can_any( 'gravityforms_delete_entries' ) ) {
 				RGFormsModel::delete_leads_by_form( $form_id, $filter );
+				// Refresh counts
+				$filter_links = self::get_filter_links( $form );
 			}
 		}
 
@@ -208,7 +220,7 @@ class GFEntryList {
 		$sort_field_meta = RGFormsModel::get_field( $form, $sort_field );
 		$is_numeric      = $sort_field_meta['type'] == 'number';
 
-		$page_size        = gf_apply_filters( 'gform_entry_page_size', $form_id, 20, $form_id );
+		$page_size        = gf_apply_filters( array( 'gform_entry_page_size', $form_id ), 20, $form_id );
 		$first_item_index = $page_index * $page_size;
 
 		if ( ! empty( $sort_field ) ) {
@@ -221,7 +233,6 @@ class GFEntryList {
 		$total_count = 0;
 
 		$leads = GFAPI::get_entries( $form_id, $search_criteria, $sorting, $paging, $total_count );
-
 
 		$columns = RGFormsModel::get_grid_columns( $form_id, true );
 
@@ -601,8 +612,8 @@ class GFEntryList {
 
 		function getSelectAllTr() {
 			var t = getSelectAllText();
-			var colspan = jQuery("#gf_entry_list").find("tr:first td").length + 1;
-			return "<tr id='gform-select-all-message' style='display:none;background-color:lightyellow;text-align:center;'><td colspan='{0}'>{1}</td></tr>".format(colspan, t);
+			var colspan = jQuery("#gf_entry_list").find("tr:first td").length + 2;
+			return "<tr id='gform-select-all-message' class='no-items' style='display:none;background-color:lightyellow;text-align:center;'><td colspan='{0}'>{1}</td></tr>".format(colspan, t);
 		}
 		function toggleSelectAll(visible) {
 			if (gformVars.countAllEntries <= gformVars.perPage) {
@@ -959,7 +970,7 @@ class GFEntryList {
 			<div class="clear"></div>
 		</div>
 
-		<table class="widefat fixed" cellspacing="0">
+		<table class="widefat fixed wp-list-table" cellspacing="0">
 		<thead>
 		<tr>
 			<th scope="col" id="cb" class="manage-column column-cb check-column">
@@ -967,22 +978,24 @@ class GFEntryList {
 			<?php
 			if ( ! in_array( $filter, array( 'spam', 'trash' ) ) ) {
 				?>
-				<th scope="col" id="cb" class="manage-column column-cb check-column">&nbsp;</th>
+				<th scope="col" class="check-column manage-column">&nbsp;</th>
 			<?php
 			}
-
+			$is_first_column = true;
 			foreach ( $columns as $field_id => $field_info ) {
 				$dir = $field_id == 0 ? 'DESC' : 'ASC'; //default every field so ascending sorting except date_created (id=0)
 				if ( $field_id == $sort_field ) {
 					//reverting direction if clicking on the currently sorted field
 					$dir = $sort_direction == 'ASC' ? 'DESC' : 'ASC';
 				}
+				$primary_class = $is_first_column ? ' column-primary column-title' : '';
 				?>
-				<th scope="col" class="manage-column entry_nowrap" onclick="Search('<?php echo esc_js( $field_id ); ?>', '<?php echo esc_js( $dir ); ?>', <?php echo absint( $form_id ); ?>, '<?php echo esc_js( $search ); ?>', '<?php echo esc_js( $star );?>', '<?php echo esc_js( $read ); ?>', '<?php echo esc_js( $filter ); ?>', '<?php echo esc_js( $search_field_id ); ?>', '<?php echo esc_js( $search_operator ); ?>');" style="cursor:pointer;"><?php echo esc_html( $field_info['label'] ) ?></th>
+				<th scope="col" class="manage-column entry_nowrap manage-column<?php echo $primary_class; ?>" onclick="Search('<?php echo esc_js( $field_id ); ?>', '<?php echo esc_js( $dir ); ?>', <?php echo absint( $form_id ); ?>, '<?php echo esc_js( $search ); ?>', '<?php echo esc_js( $star );?>', '<?php echo esc_js( $read ); ?>', '<?php echo esc_js( $filter ); ?>', '<?php echo esc_js( $search_field_id ); ?>', '<?php echo esc_js( $search_operator ); ?>');" style="cursor:pointer;"><?php echo esc_html( $field_info['label'] ) ?></th>
 			<?php
+				$is_first_column = false;
 			}
 			?>
-			<th scope="col" align="right" width="50">
+			<th scope="col" align="right" width="50" class="manage-column entry_nowrap">
 				<a title="<?php esc_attr_e( 'click to select columns to display', 'gravityforms' ) ?>" href="<?php echo trailingslashit( site_url( null, 'admin' ) ) ?>?gf_page=select_columns&id=<?php echo absint( $form_id ); ?>&TB_iframe=true&height=365&width=600" class="thickbox entries_edit_icon"><i class="fa fa-cog"></i></a>
 			</th>
 		</tr>
@@ -992,21 +1005,27 @@ class GFEntryList {
 			<th scope="col" id="cb" class="manage-column column-cb check-column" style=""><input type="checkbox" /></th>
 			<?php
 			if ( ! in_array( $filter, array( 'spam', 'trash' ) ) ) {
+
 				?>
-				<th scope="col" id="cb" class="manage-column column-cb check-column">&nbsp;</th>
+				<th scope="col" id="cb" class="check-column manage-column">&nbsp;</th>
 			<?php
+
 			}
+			$is_first_column = true;
 			foreach ( $columns as $field_id => $field_info ) {
 				$dir = $field_id == 0 ? 'DESC' : 'ASC'; //default every field so ascending sorting except date_created (id=0)
 				if ( $field_id == $sort_field ) { //reverting direction if clicking on the currently sorted field
 					$dir = $sort_direction == 'ASC' ? 'DESC' : 'ASC';
 				}
+
+				$primary_class = $is_first_column ? ' column-primary column-title' : '';
 				?>
-				<th scope="col" class="manage-column entry_nowrap" onclick="Search('<?php echo esc_js( $field_id ); ?>', '<?php echo esc_js( $dir ); ?>', <?php echo absint( $form_id ); ?>, '<?php echo esc_js( $search ); ?>', '<?php echo esc_js( $star );?>', '<?php echo esc_js( $read ); ?>', '<?php echo esc_js( $filter ); ?>', '<?php echo esc_js( $search_field_id ); ?>', '<?php echo esc_js( $search_operator ); ?>');" style="cursor:pointer;"><?php echo esc_html( $field_info['label'] ) ?></th>
+				<th scope="col" class="manage-column<?php echo $primary_class; ?>" onclick="Search('<?php echo esc_js( $field_id ); ?>', '<?php echo esc_js( $dir ); ?>', <?php echo absint( $form_id ); ?>, '<?php echo esc_js( $search ); ?>', '<?php echo esc_js( $star );?>', '<?php echo esc_js( $read ); ?>', '<?php echo esc_js( $filter ); ?>', '<?php echo esc_js( $search_field_id ); ?>', '<?php echo esc_js( $search_operator ); ?>');" style="cursor:pointer;"><?php echo esc_html( $field_info['label'] ) ?></th>
 			<?php
+				$is_first_column = false;
 			}
 			?>
-			<th scope="col" style="width:15px;">
+			<th scope="col" style="width:15px;" class="manage-column entry_nowrap manage-column entry_nowrap manage-column column-title">
 				<a title="<?php esc_attr_e( 'click to select columns to display', 'gravityforms' ) ?>" href="<?php echo trailingslashit( site_url() ) ?>?gf_page=select_columns&id=<?php echo absint( $form_id ); ?>&TB_iframe=true&height=365&width=600" class="thickbox entries_edit_icon"><i class=fa-cog"></i></a>
 			</th>
 		</tr>
@@ -1031,9 +1050,9 @@ class GFEntryList {
 				<?php
 				if ( ! in_array( $filter, array( 'spam', 'trash' ) ) ) {
 					?>
-					<td>
+					<th scope="row" class="check-column">
 						<img id="star_image_<?php echo esc_attr( $lead['id'] ) ?>" src="<?php echo GFCommon::get_base_url() ?>/images/star<?php echo intval( $lead['is_starred'] ) ?>.png" onclick="ToggleStar(this, '<?php echo esc_js( $lead['id'] ); ?>','<?php echo esc_js( $filter ); ?>');" />
-					</td>
+					</th>
 				<?php
 				}
 
@@ -1092,7 +1111,7 @@ class GFEntryList {
 					$query_string = "gf_entries&view=entry&id={$form_id}&lid={$lead['id']}{$search_qs}{$sort_qs}{$dir_qs}{$filter_qs}&paged=" . ( $page_index + 1 );
 					if ( $is_first_column ) {
 						?>
-						<td class="column-title">
+						<td class="column-title column-primary page-title has-row-actions" data-colname="<?php echo $columns[$field_id]['label']; ?>">
 							<a href="admin.php?page=gf_entries&view=entry&id=<?php echo absint( $form_id ); ?>&lid=<?php echo esc_attr( $lead['id'] . $search_qs . $sort_qs . $dir_qs . $filter_qs ); ?>&paged=<?php echo( $page_index + 1 ) ?>&pos=<?php echo $position; ?>&field_id=<?php echo esc_attr( $search_field_id ); ?>&operator=<?php echo esc_attr( $search_operator ); ?>"><?php echo $value; ?></a>
 
 							<?php $gf_entry_locking->lock_info( $lead['id'] ); ?>
@@ -1193,21 +1212,57 @@ class GFEntryList {
 										break;
 								}
 
+                                /**
+                                 * Fires after the entry actions are displayed.
+                                 *
+                                 * Used to add additional actions to entries
+                                 *
+                                 * @param int    $form_id      The ID of the form that the entry is associated with
+                                 * @param int    $field_id     The ID of the field
+                                 * @param string $value        The value of the field
+                                 * @param array  $lead         The Entry object
+                                 * @param string $query_string The query string used on the current page
+                                 */
 								do_action( 'gform_entries_first_column_actions', $form_id, $field_id, $value, $lead, $query_string );
 								?>
 
 							</div>
 							<?php
+                            /**
+                             * Fires at the end of the first entry column
+                             *
+                             * Used to add content to the entry list's first column
+                             *
+                             * @param int    $form_id      The ID of the current form
+                             * @param int    $field_id     The ID of the field
+                             * @param string $value        The value of the field
+                             * @param array  $lead         The Entry object
+                             * @param string $query_string The current page's query string
+                             */
 							do_action( 'gform_entries_first_column', $form_id, $field_id, $value, $lead, $query_string );
+							echo '<button type="button" class="toggle-row"><span class="screen-reader-text">' . __( 'Show more details' ) . '</span></button>';
 							?>
+
 						</td>
 					<?php
 
 					} else {
 						?>
-						<td class="<?php echo $nowrap_class ?>">
+						<td class="<?php echo $nowrap_class ?>" data-colname="<?php echo $columns[$field_id]['label']; ?>">
 							<?php echo apply_filters( 'gform_entries_column_filter', $value, $form_id, $field_id, $lead, $query_string ); ?>&nbsp;
-							<?php do_action( 'gform_entries_column', $form_id, $field_id, $value, $lead, $query_string ); ?>
+							<?php
+                            /**
+                             * Fired within the entries column
+                             *
+                             * Used to insert additional entry details
+                             *
+                             * @param int    $form_id      The ID of the current form
+                             * @param int    $field_id     The ID of the field
+                             * @param string $value        The value of the field
+                             * @param array  $lead         The Entry object
+                             * @param string $query_string The current page's query string
+                             */
+                            do_action( 'gform_entries_column', $form_id, $field_id, $value, $lead, $query_string ); ?>
 						</td>
 					<?php
 					}

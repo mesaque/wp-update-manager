@@ -96,14 +96,16 @@ function CreateConditionalLogic(objectType, obj){
     var anySelected = obj.conditionalLogic.logicType == "any" ? "selected='selected'" :"";
 
     var objText;
-    if(objectType == "field")
+    if (obj['type'] == "section")
+        objText = gf_vars.thisSectionIf;
+    else if(objectType == "field")
         objText = gf_vars.thisFieldIf;
     else if(objectType == "page")
         objText = gf_vars.thisPage;
     else if(objectType == "confirmation")
-        objText = gf_vars.thisConfirmation
+        objText = gf_vars.thisConfirmation;
     else if(objectType == "notification")
-        objText = gf_vars.thisNotification
+        objText = gf_vars.thisNotification;
     else
         objText = gf_vars.thisFormButton;
 
@@ -728,6 +730,12 @@ function ConfirmationObj() {
         $("#gform-settings").submit();
     };
 
+    gaddon.duplicateFeed = function (id) {
+        $("#single_action").val("duplicate");
+        $("#single_action_argument").val(id);
+        $("#gform-settings").submit();
+    };
+
     function isValidJson(str) {
         try {
             JSON.parse(str);
@@ -826,6 +834,7 @@ var gfMergeTagsObj = function(form) {
                         terms.push( ui.item.value );
 
                         this.value = terms.join( " " );
+                        elem.trigger('input').trigger('propertychange');
                         return false;
                     }
                 });
@@ -1044,11 +1053,14 @@ var gfMergeTagsObj = function(form) {
         otherGroup.push( { tag: '{embed_post:ID}', label: this.getMergeTagLabel('{embed_post:ID}') });
         otherGroup.push( { tag: '{embed_post:post_title}', label: this.getMergeTagLabel('{embed_post:post_title}') });
         otherGroup.push( { tag: '{embed_url}', label: this.getMergeTagLabel('{embed_url}') });
-        otherGroup.push( { tag: '{entry_id}', label: this.getMergeTagLabel('{entry_id}') });
-        otherGroup.push( { tag: '{entry_url}', label: this.getMergeTagLabel('{entry_url}') });
-        otherGroup.push( { tag: '{form_id}', label: this.getMergeTagLabel('{form_id}') });
 
-        otherGroup.push( { tag: '{form_title}', label: this.getMergeTagLabel('{form_title}') });
+        // the form and entry objects are not available during replacement of pre-population merge tags
+        if (!isPrepop) {
+            otherGroup.push({tag: '{entry_id}', label: this.getMergeTagLabel('{entry_id}')});
+            otherGroup.push({tag: '{entry_url}', label: this.getMergeTagLabel('{entry_url}')});
+            otherGroup.push({tag: '{form_id}', label: this.getMergeTagLabel('{form_id}')});
+            otherGroup.push({tag: '{form_title}', label: this.getMergeTagLabel('{form_title}')});
+        }
 
         otherGroup.push( { tag: '{user_agent}', label: this.getMergeTagLabel('{user_agent}') });
         otherGroup.push( { tag: '{referer}', label: this.getMergeTagLabel('{referer}') });

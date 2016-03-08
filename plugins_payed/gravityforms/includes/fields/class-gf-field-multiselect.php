@@ -82,7 +82,8 @@ class GF_Field_MultiSelect extends GF_Field {
 		 * @param string $placeholder The placeholder text.
 		 * @param integer $form_id The ID of the current form.
 		 */
-		$placeholder = gf_apply_filters( 'gform_multiselect_placeholder', array(
+		$placeholder = gf_apply_filters( array(
+			'gform_multiselect_placeholder',
 			$form_id,
 			$this->id
 		), __( 'Click to select...', 'gravityforms' ), $form_id, $this );
@@ -120,7 +121,8 @@ class GF_Field_MultiSelect extends GF_Field {
 	 */
 	public function get_value_entry_list( $value, $entry, $field_id, $columns, $form ) {
 		// add space after comma-delimited values
-		return implode( ', ', explode( ',', $value ) );
+		$value = implode( ', ', explode( ',', $value ) );
+		return esc_html( $value );
 	}
 
 	/**
@@ -144,7 +146,8 @@ class GF_Field_MultiSelect extends GF_Field {
 
 		$items = '';
 		foreach ( $value as $item ) {
-			$items .= '<li>' . GFCommon::selection_display( $item, $this, $currency, $use_text ) . '</li>';
+			$item_value = GFCommon::selection_display( $item, $this, $currency, $use_text );
+			$items .= '<li>' . esc_html( $item_value ) . '</li>';
 		}
 
 		return "<ul class='bulleted'>{$items}</ul>";
@@ -162,6 +165,14 @@ class GF_Field_MultiSelect extends GF_Field {
 	 * @return array|string
 	 */
 	public function get_value_save_entry( $value, $form, $input_name, $lead_id, $lead ) {
+
+		if ( is_array( $value ) ) {
+			foreach ( $value as &$v ) {
+				$v = $this->sanitize_entry_value( $v, $form['id'] );
+			}
+		} else {
+			$value = $this->sanitize_entry_value( $value, $form['id'] );
+		}
 
 		return empty( $value ) ? '' : is_array( $value ) ? implode( ',', $value ) : $value;
 	}
