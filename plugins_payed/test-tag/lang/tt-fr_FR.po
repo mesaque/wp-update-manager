@@ -1,0 +1,194 @@
+# Copyright (C) 2012 the WordPress team
+# This file is distributed under the GNU General Public License v2 or later.
+msgid ""
+msgstr ""
+"Project-Id-Version: Test Tag\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-11-11 02:03+0100\n"
+"PO-Revision-Date: 2013-11-11 02:03+0100\n"
+"Last-Translator: \n"
+"Language-Team: juz <juz@ecedi.fr>\n"
+"Language: Français\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-KeywordsList: _;gettext;gettext_noop;__;_e\n"
+"X-Poedit-Basepath: .\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Generator: Poedit 1.5.7\n"
+"X-Poedit-SearchPath-0: D:\\wamp\\www\\GridLayout\\wp-content\\plugins\\test-"
+"tag\n"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/settings.php:31
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/settings.php:32
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/category.php:78
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/comment.php:20
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/post.php:30
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/post.php:59
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-scripts.php:7
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-scripts.php:8
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-scripts.php:7
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-scripts.php:8
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-scripts.php:6
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-scripts.php:7
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:2
+msgid "Test Tag"
+msgstr "Test Tag"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/bulk-category.php:57
+#, php-format
+msgid "%1d categories updated"
+msgstr "%1d catégories mises à jour"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/bulk-comment.php:61
+#, php-format
+msgid "%1d comments updated"
+msgstr "%1d commentaires mis à jour"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/bulk-post.php:69
+#, php-format
+msgid "%1d posts updated"
+msgstr "%1d posts mis à jour"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/category.php:95
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/post.php:72
+msgid "Test"
+msgstr "Test"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:41
+msgid "<li>No More Post \"Test Tagged\" Found !</li>"
+msgstr "<li>Plus de  Post \"Taggués Test\" Trouvés !</li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:72
+#, php-format
+msgid "<li>Post: %1s (%2d) <span style=\"color: green;\">deleted</span></li>"
+msgstr ""
+"<li>Post : %1s (%2d) <span style=\"color: green;\">supprimé</span></li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:116
+msgid "<li>No More Comments \"Test Tagged\" Found !</li>"
+msgstr "<li>Plus de  Commentaire \"Taggué Test\" Trouvé !</li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:130
+#, php-format
+msgid ""
+"<li>Comment: %1s (%2d) <span style=\"color: green;\">deleted</span></li>"
+msgstr ""
+"<li>Commentaire : %1s (%2d) <span style=\"color: green;\">supprimé</span></"
+"li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:166
+msgid "<li>No More Category \"Test Tagged\" Found !</li>"
+msgstr "<li>Plus de  Catégorie \"Tagguée Test\" Trouvée !</li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:188
+#, php-format
+msgid ""
+"<li>Category: %1s (%2d) <span style=\"color: green;\">deleted</span></li>"
+msgstr ""
+"<li>Catégorie : %1s (%2d) <span style=\"color: green;\">supprimée</span></li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:253
+#, php-format
+msgid "<li>Widget: %1s (%2d) <span style=\"color: green;\">deleted</span></li>"
+msgstr ""
+"<li>Widget : %1s (%2d) <span style=\"color: green;\">supprimé</span></li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/inc/delete.php:284
+msgid "<li>No More Widget \"Test Tagged\" Found !</li>"
+msgstr "<li>Plus de  Widget \"Taggué Test\" Trouvé !</li>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-custom-box.php:8
+msgid "Selected Categories"
+msgstr "Catégories Sélectionnées"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-custom-box.php:27
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-custom-box.php:27
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-custom-box.php:26
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/category-custom-box.php:20
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/comment-custom-box.php:16
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/post-custom-box.php:16
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/widget-custom-box.php:9
+msgid "Is it a Test ?"
+msgstr "Est-ce un Test ?"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-custom-box.php:29
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-custom-box.php:29
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-custom-box.php:28
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/category-custom-box.php:23
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/comment-custom-box.php:18
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/post-custom-box.php:18
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/widget-custom-box.php:11
+msgid "yes"
+msgstr "oui"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-custom-box.php:31
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-custom-box.php:31
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-custom-box.php:30
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/category-custom-box.php:25
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/comment-custom-box.php:20
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/post-custom-box.php:20
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/widget-custom-box.php:13
+msgid "no"
+msgstr "non"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-category-custom-box.php:32
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-custom-box.php:32
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-custom-box.php:31
+msgid "Update"
+msgstr "Mettre à Jour"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-comment-custom-box.php:8
+msgid "Selected Comments"
+msgstr "Commentaires Sélectionnés"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/bulk-post-custom-box.php:7
+msgid "Selected Posts"
+msgstr "Posts Sélectionnés"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:11
+msgid "Delete Test Content"
+msgstr "Supprimer le Contenu de Test"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:17
+msgid "Result"
+msgstr "Résultat"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:18
+msgid "Posts"
+msgstr "Posts"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:30
+msgid ""
+"Are you sure you want to REMOVE PERMANENTLY all \"Test Tagged\" content ?"
+msgstr ""
+"Êtes-vous sûr de vouloir SUPPRIMER DÉFINITIVEMENT tous les contenus "
+"\"Taggués Test\" ?"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:32
+msgid "Prossesing Posts <span id=\"percent\">0%</span>"
+msgstr "Traitement des Posts <span id=\"percent\">0%</span>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:64
+msgid "Prossesing Categories <span id=\"percent\">0%</span>"
+msgstr "Traitement des Catégories <span id=\"percent\">0%</span>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:101
+msgid "Prossesing Widgets <span id=\"percent\">0%</span>"
+msgstr "Traitement des Widgets <span id=\"percent\">0%</span>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:137
+msgid "Prossesing Comments <span id=\"percent\">0%</span>"
+msgstr "Traitement des Commentaires <span id=\"percent\">0%</span>"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:173
+msgid "No more \"Test Tagged\" content Found !"
+msgstr "Plus de Contenu \"Taggué Test\" Trouvé !"
+
+#: D:\wamp\www\GridLayout\wp-content\plugins\test-tag/views/tools.php:175
+msgid ""
+"Prossesing \"test Tagged\" Content <span style=\"color: green;\">Finished !</"
+"span>"
+msgstr ""
+"Traitement des Contenus \"Taggués Test\" <span style=\"color: green;"
+"\">Terminé !</span>"
