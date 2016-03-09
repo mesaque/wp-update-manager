@@ -5,3 +5,5 @@ result.txt
 coreUpdate.log
 pluginsUpdate.log
 status.log
+coreUpdate_db.log
+plugins_payed.log
