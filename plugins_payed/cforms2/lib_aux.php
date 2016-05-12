@@ -1,7 +1,7 @@
 <?php
 /*
  * Copyright (c) 2006-2012 Oliver Seidel (email : oliver.seidel @ deliciousdays.com)
- * Copyright (c) 2014-2015 Bastian Germann
+ * Copyright (c) 2014-2016 Bastian Germann
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,18 +30,6 @@ if (!defined('WP_DEBUG_CFORMS2')) {
 }
 function cforms2_dbg($m){
     if ( WP_DEBUG_CFORMS2 ) trigger_error('DEBUG cforms2: ' . $m);
-} 
-
-
-
-### make time
-function cforms2_sec2hms($s) {
-	$t='';
-    $h = intval(intval($s) / 3600);
-    $m = intval(($s / 60) % 60);
-     if ($h>0)	$t .= " $h ".__('hour(s)', 'cforms2').' &';
-     if ($m>0)	$t .= " $m ".__('minute(s)', 'cforms2');
-     return $t;
 }
 
 
@@ -73,7 +61,7 @@ function cforms2_check_time($no) {
 	 else
      	$t2f=true;
 
-	return ( ($t1f || $t1 <= time()) && ($t2f || $t2 >= time()) )?true:false;
+	return ($t1f || $t1 <= current_time('timestamp')) && ($t2f || $t2 >= current_time('timestamp'));
 }
 
 
@@ -136,9 +124,6 @@ function cforms2_format_email($track,$no){
 		### Exclude empty fields?
 		if ($v == '' && $cformsSettings['form'.$no]['cforms'.$no.'_emptyoff'])
 			continue;
-
-        ### fix labels
-	 	if ( in_array($k,array('cauthor','email','url','comment')) ) continue;
 
 		if ( preg_match('/\$\$\$/',$k) ) continue;
 
@@ -217,6 +202,7 @@ function cforms2_get_current_page(){
 
 
 ### check for post custom fields in string
+### TODO what is call to get_post_custom for?
 function cforms2_check_post_vars($fv){
     preg_match_all('/\\{([^\\{]+)\\}/',$fv,$fall);
 
@@ -236,72 +222,69 @@ function cforms2_check_post_vars($fv){
 
 ### look for default/system variables
 function cforms2_check_default_vars($m,$no) {
-		global $subID, $cformsSettings;
+	global $subID, $cformsSettings;
 
-	    $eol = ($cformsSettings['global']['cforms_crlf']['b']!=1)?"\r\n":"\n";
+	$eol = ($cformsSettings['global']['cforms_crlf']['b']!=1)?"\r\n":"\n";
 
-		if ( isset($_POST['comment_post_ID'.$no] ) && $_POST['comment_post_ID'.$no] )
-			$pid = $_POST['comment_post_ID'.$no];
-		else
-			$pid = get_the_ID();
+	if ( isset($_POST['comment_post_ID'.$no] ) && $_POST['comment_post_ID'.$no] )
+		$pid = $_POST['comment_post_ID'.$no];
+	else
+		$pid = get_the_ID();
 
-		if ( isset($_POST['cforms_pl'.$no] ) && $_POST['cforms_pl'.$no] )
-			$permalink = $_POST['cforms_pl'.$no];
-		else
-			$permalink = get_permalink($pid);
+	if ( isset($_POST['cforms_pl'.$no] ) && $_POST['cforms_pl'.$no] )
+		$permalink = $_POST['cforms_pl'.$no];
+	else
+		$permalink = get_permalink($pid);
 
-		$date = mysql2date(get_option('date_format'), current_time('mysql'));
+	$date = current_time(get_option('date_format'));
 
-		$time = gmdate(get_option('time_format'), current_time('timestamp'));
-		$page = cforms2_get_current_page();
+	$time = current_time(get_option('time_format'));
+	$page = cforms2_get_current_page();
 
-		if ( substr($cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'],0,1)=='2' ) // WP comment fix
-			$page = $permalink;
+	$find = get_post($pid);
+	if (!empty($find)) {
+		$user = get_user_by('id', $find->post_author);
+		$user_name = $user->display_name;
+		$post_title = $find->post_title;
+		$post_excerpt = $find->post_excerpt;
+	} else {
+		$user_name = $post_title = $post_excerpt = '';
+	}
 
-		$find = get_post($pid);
-		if (!empty($find)) {
-			$user = get_user_by('id', $find->post_author);
-			$user_name = $user->display_name;
-			$post_title = $find->post_title;
-			$post_excerpt = $find->post_excerpt;
-		} else {
-			$user_name = $post_title = $post_excerpt = '';
-		}
+	$CurrUser = wp_get_current_user();
 
-		$CurrUser = wp_get_current_user();
+	if (isset($_SERVER['HTTP_REFERER'])) 
+		$m  = str_replace( '{Referer}',	$_SERVER['HTTP_REFERER'], $m );
+	$m  = str_replace( '{PostID}',		$pid, $m );
+	$m 	= str_replace( '{Form Name}',	$cformsSettings['form'.$no]['cforms'.$no.'_fname'], $m );
+	$m 	= str_replace( '{Page}',		$page, $m );
+	$m 	= str_replace( '{Date}',		$date, $m );
+	$m 	= str_replace( '{Author}',		$user_name, $m );
+	$m 	= str_replace( '{Time}',		$time, $m );
+	$m 	= str_replace( '{IP}',			cforms2_get_ip(), $m );
+	$m 	= str_replace( '{BLOGNAME}',	get_option('blogname'), $m );
 
-		if (isset($_SERVER['HTTP_REFERER'])) 
-			$m  = str_replace( '{Referer}',	$_SERVER['HTTP_REFERER'], $m );
-		$m  = str_replace( '{PostID}',		$pid, $m );
-		$m 	= str_replace( '{Form Name}',	$cformsSettings['form'.$no]['cforms'.$no.'_fname'], $m );
-		$m 	= str_replace( '{Page}',		$page, $m );
-		$m 	= str_replace( '{Date}',		$date, $m );
-		$m 	= str_replace( '{Author}',		$user_name, $m );
-		$m 	= str_replace( '{Time}',		$time, $m );
-		$m 	= str_replace( '{IP}',			cforms2_get_ip(), $m );
-		$m 	= str_replace( '{BLOGNAME}',	get_option('blogname'), $m );
+	$m 	= str_replace( '{CurUserID}',	$CurrUser->ID, $m );
+	$m 	= str_replace( '{CurUserName}',	$CurrUser->display_name, $m );
+	$m 	= str_replace( '{CurUserEmail}',$CurrUser->user_email, $m );
+	$m 	= str_replace( '{CurUserFirstName}', $CurrUser->user_firstname, $m );
+	$m 	= str_replace( '{CurUserLastName}',	$CurrUser->user_lastname, $m );
 
-		$m 	= str_replace( '{CurUserID}',	$CurrUser->ID, $m );
-		$m 	= str_replace( '{CurUserName}',	$CurrUser->display_name, $m );
-		$m 	= str_replace( '{CurUserEmail}',$CurrUser->user_email, $m );
-		$m 	= str_replace( '{CurUserFirstName}', $CurrUser->user_firstname, $m );
-		$m 	= str_replace( '{CurUserLastName}',	$CurrUser->user_lastname, $m );
+	$m 	= str_replace( '{Permalink}',	$permalink, $m );
+	$m 	= str_replace( '{Title}',		$post_title, $m );
+	$m 	= str_replace( '{Excerpt}',		$post_excerpt, $m );
 
-		$m 	= str_replace( '{Permalink}',	$permalink, $m );
-		$m 	= str_replace( '{Title}',		$post_title, $m );
-		$m 	= str_replace( '{Excerpt}',		$post_excerpt, $m );
+	$m 	= preg_replace( "/\r\n\./", "\n", $m );
 
-		$m 	= preg_replace( "/\r\n\./", "\n", $m );
+	### normalize
+	$m 	= str_replace( "\r\n", "\n", $m );
+	$m 	= str_replace( "\r", "\n", $m );
+	$m 	= str_replace( "\n", $eol, $m );
 
-		### normalize
-		$m 	= str_replace( "\r\n", "\n", $m );
-		$m 	= str_replace( "\r", "\n", $m );
-		$m 	= str_replace( "\n", $eol, $m );
+	if  ( $cformsSettings['global']['cforms_database'] && $subID<>'' )
+		$m 	= str_replace( '{ID}', $subID, $m );
 
-		if  ( $cformsSettings['global']['cforms_database'] && $subID<>'' )
-			$m 	= str_replace( '{ID}', $subID, $m );
-
-		return $m;
+	return $m;
 }
 
 
@@ -366,108 +349,40 @@ function cforms2_get_ip() {
 }
 
 
+function cforms2_compare( $a,$b ){
+	global $cfdataTMP, $cfsort, $cfsortdir;
 
-class cforms2_rss {
-	static function vars($public_query_vars) {
-        $public_query_vars[] = 'cformsRSS';
-        return $public_query_vars;
-    }
-
-	static function outputRSS() {
-		global $wpdb, $cformsSettings;
-		$temp=get_query_var('cformsRSS');
-		if( $temp <> '' ) {
-
-			$cformsRSS = explode('$#$', $temp);
-            $no = $cformsRSS[0];
-            $key = $cformsRSS[1];
-
-			$all = $no=='-1' && $cformsSettings['global']['cforms_rssall'] && $cformsSettings['global']['cforms_rsskeyall'] == $key;
-			$single = $no<>'-1' && $cformsSettings['form'.$no]['cforms'.$no.'_rss'] && $key<>'' && $cformsSettings['form'.$no]['cforms'.$no.'_rsskey'] == $key;
-			if( $all || $single ){
-
-				### add opt. form content
-
-				$WHERE='';
-				if( $all )
-					$rsscount = ($cformsSettings['global']['cforms_rssall_count']>0)?$cformsSettings['global']['cforms_rssall_count']:5;
-				else if( $single ){
-					$WHERE = "WHERE form_id = '".$no."'";
-					$rsscount = ($cformsSettings['form'.$no]['cforms'.$no.'_rss_count']>0)?$cformsSettings['form'.$no]['cforms'.$no.'_rss_count']:5;
-				}
-				$entries = $wpdb->get_results("SELECT * FROM {$wpdb->cformssubmissions} $WHERE ORDER BY sub_date DESC LIMIT 0,".$rsscount); //TODO check SQL injection
-
-				$content = '';
-                if( count($entries)>0 ){
-					foreach($entries as $entry){
-
-							$ff = $cformsSettings['form'.$entry->form_id];
-							$findex = 'cforms'.$entry->form_id.'_rss_fields';
-							$f = isset($ff[$findex]) ? $ff[$findex] : null;
-	                        $date = mysql2date(get_option('date_format'), $entry->sub_date);
-	                        $time = mysql2date(get_option('time_format'), $entry->sub_date);
-							$title = '['.$entry->id.'] '.$entry->email;
-
-                            $description = '<![CDATA[ <div style="margin:8px 0;"><span style="font-size:150%; color:#aaa;font-weight:bold;">#'.$entry->id.'</span> '. "$date&nbsp;<strong>$time</strong>" .( $single?'':' &nbsp;<strong>"'.$cformsSettings['form'.$entry->form_id]['cforms'.$entry->form_id.'_fname'].'"</strong>:' ).'</div>';
-							$data = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->cformsdata} WHERE sub_id=%s", $entry->id));
-                            if( is_array($f) && array_count_values($f)>0 ){
-								foreach( $data as $e ){
-									if( array_search($e->field_name,$f)!==false )
-                                    	$description .= '<div style="width:100%; clear:left;"><div style="background:#F8FAFC;width:49%; float:left; text-align:right;margin-right:1%;">'.$e->field_name.':</div><div style="width:50%; float:left;">'.$e->field_val.'</div></div>';
-                                }
-							}
-
-			                $entrylink = network_site_url().'/wp-admin/admin.php?page='.plugin_dir_path(plugin_basename(__FILE__)).'cforms-database.php&amp;d-id='.$entry->id.'#entry'.$entry->id;
-							$description .= '<div style="margin:8px 0;"><a href="'.$entrylink.'">'.__('View details','cforms2').'</a></div> ]]>';
-							$content.= "\t".'<item>'."\n".
-										"\t\t".'<title>'.$title.'</title>'."\n".
-										"\t\t".'<description>'.$description.'</description>'."\n".
-										"\t\t".'<link>'.$entrylink.'</link>'."\n".
-										"\t\t".'<guid isPermaLink="false">'.$entrylink.'</guid>'."\n".
-										"\t\t".'<pubDate>'.mysql2date('D, d M Y H:i:s +0000', $entry->sub_date, false).'</pubDate>'."\n".
-										"\t".'</item>'."\n";
-					}
-				}
-				else
-					$content = '<item><title>'.__('No entries yet','cforms2').'</title><description>'.__('You might want to check back in a little while...','cforms2').'</description>'.
-								'<link></link><guid isPermaLink="false"></guid><pubDate>'.gmdate('D, d M Y H:i:s +0000', current_time('timestamp')).'</pubDate></item>';
-
-	header( 'Content-Type: text/xml; charset='.get_option('blog_charset') );
-
-?>
-<?php echo '<?xml version="1.0" encoding="'.get_option('blog_charset').'"?'.'>'; ?>
-
-<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:wfw="http://wellformedweb.org/CommentAPI/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:atom="http://www.w3.org/2005/Atom">
-<channel>
-	<title><?php if ($single) echo __('New submissions for >>', 'cforms2').' '.stripslashes($cformsSettings['form'.$no]['cforms'.$no.'_fname']); else _e('All new form submissions', 'cforms2'); ?></title>
-	<atom:link href="<?php echo network_site_url().'?cformsRSS='.$no.urlencode('$#$').$cformsSettings['form'.$no]['cforms'.$no.'_rsskey']; ?>" rel="self" type="application/rss+xml" />
-	<link><?php echo network_site_url(); ?></link>
-	<description><?php _e('This RSS feed provides you with the most recent form submissions.', 'cforms2') ?></description>
-	<pubDate><?php echo mysql2date('D, d M Y H:i:s +0000', get_lastpostmodified('GMT'), false); ?></pubDate>
-	<language><?php echo get_option('rss_language'); ?></language>
-<?php echo $content; ?>
-</channel>
-</rss>
-<?php
-				die();
-			}
+	if (!is_array($a) && !is_array($b)){
+		
+		$na = ($cfdataTMP[$a]['data'][$cfsort]<>'') ? $cfdataTMP[$a]['data'][$cfsort]:false;
+		$nb = ($cfdataTMP[$b]['data'][$cfsort]<>'') ? $cfdataTMP[$b]['data'][$cfsort]:false;
+	
+		if ( !($na && $nb) ) {
+			if ( !$na ) return 1;
+			if ( !$nb ) return -1;
+			return 0;
 		}
 	}
+
+    $tmpA=(int)trim($na);
+    $tmpB=(int)trim($nb);
+    if ( is_numeric($na) && is_numeric($nb) ){
+	    if ( stristr($cfsortdir,'asc')===false ){
+	        return ($tmpB > $tmpA)?-1:1;
+	    } else {
+	        return ($tmpA < $tmpB)?-1:1;
+		}
+    } else {
+	    if ( stristr($cfsortdir,'asc')===false ){
+	        return strcasecmp($nb, $na);
+	    }else{
+	        return strcasecmp($na, $nb);
+    	}
+	}
 }
-add_filter('query_vars', array('cforms2_rss', 'vars'));
-add_action('template_redirect', array('cforms2_rss', 'outputRSS'));
 
 
-###
-###
-### API functions
-###
-###
-
-
-### API function #1 : get tracked entries
-global $cfdata, $cfsort, $cfsortdir;
-
+### API function: get_cforms_entries
 if (!function_exists('get_cforms_entries')) {
 function get_cforms_entries($fname=false,$from=false,$to=false,$s=false,$limit=false,$sd='asc') {
 	global $wpdb, $cformsSettings, $cfdataTMP, $cfsort, $cfsortdir;
@@ -512,7 +427,7 @@ function get_cforms_entries($fname=false,$from=false,$to=false,$s=false,$limit=f
     $in = '';
 
     $sql = "SELECT *, UNIX_TIMESTAMP(sub_date) as rawdate  FROM {$wpdb->cformssubmissions} $where $ORDER_1 $limit";
-	$all = $wpdb->get_results($sql); //TODO check SQL injection
+	$all = $wpdb->get_results($sql);
 	
 	foreach ( $all as $d ){
     	$in .= $wpdb->prepare("%d,", $d->id);
@@ -552,52 +467,4 @@ function get_cforms_entries($fname=false,$from=false,$to=false,$s=false,$limit=f
 	}
 	return $cfdata;
 }
-}
-
-
-
-function cforms2_compare( $a,$b ){
-	global $cfdataTMP, $cfsort, $cfsortdir;
-
-	if (!is_array($a) && !is_array($b)){
-		
-		$na = ($cfdataTMP[$a]['data'][$cfsort]<>'') ? $cfdataTMP[$a]['data'][$cfsort]:false;
-		$nb = ($cfdataTMP[$b]['data'][$cfsort]<>'') ? $cfdataTMP[$b]['data'][$cfsort]:false;
-	
-		if ( !($na && $nb) ) {
-			if ( !$na ) return 1;
-			if ( !$nb ) return -1;
-			return 0;
-		}
-	}
-
-    $tmpA=(int)trim($na);
-    $tmpB=(int)trim($nb);
-    if ( is_numeric($na) && is_numeric($nb) ){
-	    if ( stristr($cfsortdir,'asc')===false ){
-	        return ($tmpB > $tmpA)?-1:1;
-	    } else {
-	        return ($tmpA < $tmpB)?-1:1;
-		}
-    } else {
-	    if ( stristr($cfsortdir,'asc')===false ){
-	        return strcasecmp($nb, $na);
-	    }else{
-	        return strcasecmp($na, $nb);
-    	}
-	}
-}
-
-
-
-### API functions #2 : get tracked entries
-if (!function_exists('cf_extra_comment_data')) {
-	function cf_extra_comment_data( $id ) {
-		global $wpdb;
-		$all = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->cformsdata} WHERE sub_id = (SELECT sub_id FROM {$wpdb->cformsdata} WHERE field_name='commentID' AND field_val=%s)", $id));
-		foreach( $all as $a ) {
-			$r[$a->field_name]=$a->field_val;
-        }
-		return $r;
-	}
 }

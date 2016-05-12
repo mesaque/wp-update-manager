@@ -1,7 +1,7 @@
 <?php
 /*
 * Tiny Compress Images - WordPress plugin.
-* Copyright (C) 2015 Voormedia B.V.
+* Copyright (C) 2015-2016 Voormedia B.V.
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the Free
@@ -68,6 +68,7 @@ abstract class Tiny_WP_Base {
             add_action('init', $this->get_method('xmlrpc_init'));
         } elseif (is_admin()) {
             add_action('admin_init', $this->get_method('admin_init'));
+            add_action('admin_menu', $this->get_method('admin_menu'));
         }
     }
 
@@ -94,5 +95,8 @@ abstract class Tiny_WP_Base {
     }
 
     public function admin_init() {
+    }
+
+    public function admin_menu() {
     }
 }

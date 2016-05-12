@@ -1,7 +1,7 @@
 <?php
 /*
  * Copyright (c) 2006-2012 Oliver Seidel (email : oliver.seidel @ deliciousdays.com)
- * Copyright (c) 2014      Bastian Germann
+ * Copyright (c) 2014-2016 Bastian Germann
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,6 @@ $wpdb->cformsdata       	= $wpdb->prefix . 'cformsdata';
 ### Check Whether User Can Manage Database
 cforms2_check_access_priv('track_cforms');
 
-### New global settings container, will eventually be the only one!
 $cformsSettings = get_option('cforms_settings');
 
 ### if all data has been erased quit
@@ -118,7 +117,7 @@ function cforms2_insert_modal_tracking(){
 	<div class="jqmWindow" id="cf_delete_dialog">
 		<div class="cf_ed_header"><?php _e('Please Confirm','cforms2'); ?></div>
 		<div class="cf_ed_main">
-			<form action="" name="deleteform" method="post">
+			<form name="deleteform" method="post">
 				<div id="cf_target_del"><?php _e('Are you sure you want to delete the record(s)?','cforms2'); ?></div>
 				<div class="controls"><a href="#" id="okDelete" class="jqmClose dashicons dashicons-yes" title="<?php _e('OK', 'cforms2') ?>"></a><a href="#" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></div>
 			</form>
@@ -127,7 +126,7 @@ function cforms2_insert_modal_tracking(){
 	<div class="jqmWindow" id="cf_dl_dialog">
 		<div class="cf_ed_header"><?php _e('Please Confirm','cforms2'); ?></div>
 		<div class="cf_ed_main">
-			<form action="" name="downloadform" method="post" id="downloadform">
+			<form name="downloadform" method="post" id="downloadform">
 				<div id="cf_target_dl">
                     <select id="pickDLformat" name="format">
                         <option value="xml">&nbsp;&nbsp;&nbsp;XML&nbsp;&nbsp;&nbsp;</option>

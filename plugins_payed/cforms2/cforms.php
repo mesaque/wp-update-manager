@@ -20,12 +20,11 @@
  * Plugin URI: https://wordpress.org/plugins/cforms2/
  * Description: cformsII offers unparalleled flexibility in deploying contact forms across your blog. Features include: comprehensive SPAM protection, Ajax support, Backup & Restore, Multi-Recipients, Role Manager support, Database tracking and many more.
  * Author: Oliver Seidel, Bastian Germann
- * Version: 14.11.4
+ * Version: 14.12
  * Text Domain: cforms2
  */
 
-global $localversion;
-$localversion = '14.11.4';
+define( 'CFORMS2_VERSION', '14.12' );
 
 ### db settings
 global $wpdb;
@@ -40,10 +39,8 @@ require_once(plugin_dir_path(__FILE__) . 'lib_activate.php');
 
 
 $role = get_role('administrator');
-if(!$role->has_cap('manage_cforms')) {
+if($role != null) {
 	$role->add_cap('manage_cforms');
-}
-if(!$role->has_cap('track_cforms')) {
 	$role->add_cap('track_cforms');
 }
 
@@ -51,7 +48,6 @@ if(!$role->has_cap('track_cforms')) {
 function cforms2_activate() {
     cforms2_setup_db();
 }
-// TODO check if this is run when updated without explicitly activating
 add_action('activate_' . plugin_basename(__FILE__), 'cforms2_activate' );
 
 
@@ -104,17 +100,14 @@ function cforms2($args = '',$no = '') {
     cforms2_dbg("Original form on page #$oldno");
 
 	### multi page form: overwrite $no
-    $isWPcommentForm = (substr($cformsSettings['form'.$oldno]['cforms'.$oldno.'_tellafriend'],0,1)=='2');
     $isMPform = $cformsSettings['form'.$oldno]['cforms'.$oldno.'_mp']['mp_form'];
-    $isTAF = substr($cformsSettings['form'.$oldno]['cforms'.$oldno.'_tellafriend'],0,1);
 
 	##debug
-    cforms2_dbg("Comment form = $isWPcommentForm");
     cforms2_dbg("Multi-page form = $isMPform");
    	if (isset($_SESSION) && isset($_SESSION['cforms']['current']))
 		cforms2_dbg("PHP Session = ".$_SESSION['cforms']['current'] );
 
-	if( $isMPform && is_array($_SESSION['cforms']) && $_SESSION['cforms']['current']>0 && !$isWPcommentForm ){
+	if( $isMPform && is_array($_SESSION['cforms']) && $_SESSION['cforms']['current']>0 ){
 		cforms2_dbg("form no. rewrite from #{$no} to #").$_SESSION['cforms']['current'];
 		$no = $_SESSION['cforms']['current'];
 	}
@@ -182,16 +175,12 @@ function cforms2($args = '',$no = '') {
 	$err=0;
 
 	$validations = array();
-	$all_valid = 1;
-	$off=0;
-	$fieldsetnr=1;
+	$all_valid = true;
 
-	$c_errflag=false;
 	$custom_error='';
 	$usermessage_class='';
 	$usermessage_text	= "";
 
-	$user = wp_get_current_user();
 	// TODO integrate this check better
 	$server_upload_size_error = false;
 	$displayMaxSize = ini_get('post_max_size');
@@ -205,7 +194,7 @@ function cforms2($args = '',$no = '') {
     ### non Ajax method
     if( isset($_REQUEST['sendbutton'.$no]) || $server_upload_size_error ) {
 		global $cf_redirect;
-		require_once (plugin_dir_path(__FILE__) . 'lib_nonajax.php');
+		require_once (plugin_dir_path(__FILE__) . 'lib_validate.php');
 		$usermessage_class = $all_valid?' success':' failure';
 		if ( $cf_redirect <> '' ) { // TODO rework to do this via HTTP?
 	        echo '<script type="text/javascript">'
@@ -220,18 +209,6 @@ function cforms2($args = '',$no = '') {
 	###
 	$success=false;
 
-    ###  fix for WP Comment (loading after redirect)
-	if ( isset($_GET['cfemail']) && $isWPcommentForm ){
-		$usermessage_class = ' success';
-		$success=true;
-		if ( $_GET['cfemail']=='sent' || $_GET['cfemail']=='posted' ){
-			$usermessage_text = preg_replace ( '|\r\n|', '<br />', stripslashes($cformsSettings['form'.$no]['cforms'.$no.'_success']) );
-		} else {
-			$usermessage_class = ' failure';
-			$success=false;		
-		}
-	}
-
 	### either show info message above or below
 	$usermessage_text	= cforms2_check_default_vars($usermessage_text,$no);
 	$usermessage_text	= cforms2_check_cust_vars($usermessage_text,$track);
@@ -239,7 +216,7 @@ function cforms2($args = '',$no = '') {
 	if ( function_exists('my_cforms_logic') )
 	    $usermessage_text = my_cforms_logic($trackf, $usermessage_text,'successMessage');
 
-   	$umc = ($usermessage_class<>''&&$no>1)?' '.$usermessage_class.$no:'';
+   	$umc = ($usermessage_class<>'' && $no>1)?' '.$usermessage_class.$no:'';
 
     ##debug
     cforms2_dbg("User info for form #$no");
@@ -341,8 +318,6 @@ function cforms2($args = '',$no = '') {
 		$action = $cformsSettings['form'.$no]['cforms'.$no.'_action_page'];
 		$alt_action=true;
 	}
-	else if( $isWPcommentForm )
-		$action = admin_url('admin-ajax.php'); ### re-route and use WP comment processing
  	else
 		$action = cforms2_get_current_page() . '#usermessage'. $no . $actiontarget;
 
@@ -379,12 +354,6 @@ function cforms2($args = '',$no = '') {
 		$field_disabled   = $field_stat[5];
 		$field_readonly   = $field_stat[6];
 
-
-		### ommit certain fields
-		if( in_array($field_type,array('cauthor','url','email')) && $user->ID )
-			continue;
-
-
 		
 		### check for html5 attributes
 	    $obj = explode('|html5:', $field_name,2);
@@ -406,13 +375,6 @@ function cforms2($args = '',$no = '') {
 		    switch ( $field_type ) {
 			    case 'upload':
 					$custom_error .= 'cf_uploadfile' . $no . '-'. $i . '$#$'.$fielderr.'|';
-	    			break;
-
-				case "cauthor":
-				case "url":
-				case "email":
-				case "comment":
-					$custom_error .= $field_type . '$#$'.$fielderr.'|';
 	    			break;
 
 			    default:
@@ -539,25 +501,13 @@ function cforms2($args = '',$no = '') {
 				$input_id = $input_name = 'cf_uploadfile'.$no.'-'.$i;
 				$field_class = 'upload';
 				break;
-			case "email":
-			case "cauthor":
-			case "url":
-				$input_id = $input_name = $field_type;
 			case "datepicker":
-			case "yourname":
-			case "youremail":
-			case "friendsname":
-			case "friendsemail":
 			case "textfield":
 			case "pwfield":
 				$field_class = 'single';
 				break;
 			case "hidden":
 				$field_class = 'hidden';
-				break;
-			case 'comment':
-				$input_id = $input_name = $field_type;
-				$field_class = 'area';
 				break;
 			case 'textarea':
 				$field_class = 'area';
@@ -636,7 +586,6 @@ function cforms2($args = '',$no = '') {
 		$dp = '';
 		$field  = '';
 		$val = '';
-		$cookieset = '';
 		if (array_key_exists($field_type, $captchas)){
 			$html = $captchas[$field_type]->get_request($input_id, 'secinput fldrequired '.$field_class, $fieldTitle);
 			$field = $html;
@@ -677,20 +626,8 @@ function cforms2($args = '',$no = '') {
 						$ol = false;
 				} else $field='';
 				break;
-
-			case "cauthor":
-				$cookieset = 'comment_author_'.COOKIEHASH;
-			case "url":
-				$cookieset = ($cookieset=='')?'comment_author_url_'.COOKIEHASH:$cookieset;
-			case "email":
-				$cookieset = ($cookieset=='')?'comment_author_email_'.COOKIEHASH:$cookieset;
-				$field_value = ( $_COOKIE[$cookieset]<>'' ) ? $_COOKIE[$cookieset] : $field_value;
 			
 			case "datepicker":
-			case "yourname":
-			case "youremail":
-			case "friendsname":
-			case "friendsemail":
 			case "textfield":
 			case "pwfield":
 			case "html5color":
@@ -751,7 +688,6 @@ function cforms2($args = '',$no = '') {
 				$field .= '<li class="cf_hidden"><input type="hidden" class="cfhidden" name="'.$input_name.'" id="'.$input_id.'" value="' . $field_value  . '" title="'.$fieldTitle.'"/></li>';
 				break;
 
-			case "comment":
 			case "textarea":
 			    $onfocus = $field_clear?' onfocus="clearField(this)" onblur="setField(this)"' : '';
 
@@ -976,16 +912,12 @@ function cforms2($args = '',$no = '') {
 
 
 	### rest of the form
-	$comment = substr($cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'], 0, 1) === '2';
-	if ( $cformsSettings['form'.$no]['cforms'.$no.'_ajax']=='1' && !$upload && !$custom && !$alt_action && !$comment)
+	if ( $cformsSettings['form'.$no]['cforms'.$no.'_ajax']=='1' && !$upload && !$custom && !$alt_action)
 		$ajaxenabled = ' onclick="return cforms_validate(\''.$no.'\', false)"';
 	else if ( ($upload || $custom || $alt_action) && $cformsSettings['form'.$no]['cforms'.$no.'_ajax']=='1' )
 		$ajaxenabled = ' onclick="return cforms_validate(\''.$no.'\', true)"';
 	else
-		$ajaxenabled = ' />'
-			. '<input type="hidden" name="cforms_id" value="' . $no
-			. '" /><input type="hidden" name="action" value="submitcomment_direct" />'
-			. '<input type="hidden" name="_wpnonce" value="' . wp_create_nonce('submitcomment_direct') . '"';
+		$ajaxenabled = '';
 
 
 	### just to appease html "strict"
@@ -995,15 +927,9 @@ function cforms2($args = '',$no = '') {
 	$custom_error=substr($cformsSettings['form'.$no]['cforms'.$no.'_showpos'],2,1).substr($cformsSettings['form'.$no]['cforms'.$no.'_showpos'],3,1).substr($cformsSettings['form'.$no]['cforms'.$no.'_showpos'],4,1).$custom_error;
 
 
-	### TAF or WP comment or Extra Fields
-	if ( (int)$isTAF > 0 ){
-
-		$nono = $isWPcommentForm?'':$no;
-
-		if ( $isWPcommentForm )
-			$content .= '<input type="hidden" name="comment_parent" id="comment_parent" value="'.( empty($_REQUEST['replytocom']) ? '0' : $_REQUEST['replytocom'] ).'"/>';
-
-		$content .= '<input type="hidden" name="comment_post_ID'.$nono.'" id="comment_post_ID'.$nono.'" value="' . ( isset($_GET['pid'])? $_GET['pid'] : get_the_ID() ) . '"/>' .
+	### Extra Fields
+	if ( substr($cformsSettings['form'.$oldno]['cforms'.$oldno.'_tellafriend'],0,1) === '3' ){
+		$content .= '<input type="hidden" name="comment_post_ID'.$no.'" id="comment_post_ID'.$no.'" value="' . ( isset($_GET['pid'])? $_GET['pid'] : get_the_ID() ) . '"/>' .
 					'<input type="hidden" name="cforms_pl'.$no.'" id="cforms_pl'.$no.'" value="' . ( isset($_GET['pid'])? get_permalink($_GET['pid']) : get_permalink() ) . '"/>';
 	}
 
@@ -1027,23 +953,14 @@ function cforms2($args = '',$no = '') {
 		$back = '<input type="submit" name="backbutton'.$no.'" id="backbutton'.$no.'" class="backbutton" value="' . $cformsSettings['form'.$no]['cforms'.$no.'_mp']['mp_backtext'] . '">';
 
 
-	$content .= '<p class="cf-sb">'.$reset.$back.'<input type="submit" name="sendbutton'.$no.'" id="sendbutton'.$no.'" class="sendbutton" value="' . stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_submit_text'])) . '"'.$ajaxenabled.'/></p>';
-	if ($isWPcommentForm) {
-		ob_start();
-		do_action( 'comment_form', get_the_ID() );
-		$content .= ob_get_clean();
-	}
-	$content .= '</form>';
+	$content .= '<p class="cf-sb">'.$reset.$back.'<input type="submit" name="sendbutton'.$no.'" id="sendbutton'.$no.'" class="sendbutton" value="' . stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_submit_text'])) . '"'.$ajaxenabled.'/></p></form>';
 
 	### either show message above or below
 	$usermessage_text	= cforms2_check_default_vars($usermessage_text,$no);
 	$usermessage_text	= cforms2_check_cust_vars($usermessage_text,$track);
 
-	if( substr($cformsSettings['form'.$no]['cforms'.$no.'_showpos'],1,1)=='y' && !($success&&$cformsSettings['form'.$no]['cforms'.$no.'_hide']))
+	if( substr($cformsSettings['form'.$no]['cforms'.$no.'_showpos'],1,1)=='y' && !($success && $cformsSettings['form'.$no]['cforms'.$no.'_hide']))
 		$content .= '<div id="usermessage'.$no.'b" class="cf_info ' . $usermessage_class . $umc . '" >' . $usermessage_text . '</div>';
-
-	### debug
-	cforms2_dbg( "(cforms) Last stop...".print_r($_SESSION,1) );
 
 	return $content;
 }
@@ -1051,7 +968,7 @@ function cforms2($args = '',$no = '') {
 
 ### some css for positioning the form elements
 function cforms2_enqueue_scripts() {
-	global $wp_query, $localversion, $cformsSettings;
+	global $wp_query, $cformsSettings;
 
 	### add content actions and filters
 	$page_obj = $wp_query->get_queried_object();
@@ -1063,15 +980,15 @@ function cforms2_enqueue_scripts() {
 	if( $onPages=='' || (in_array($page_obj->ID,$onPagesA) && !$exclude) || (!in_array($page_obj->ID,$onPagesA) && $exclude)){
 
 		if( $cformsSettings['global']['cforms_no_css']<>'1' ) {
-			wp_register_style( 'cforms2', plugin_dir_url(__FILE__) . 'styling/' . $cformsSettings['global']['cforms_css'], array(), $localversion );
+			wp_register_style( 'cforms2', plugin_dir_url(__FILE__) . 'styling/' . $cformsSettings['global']['cforms_css'], array(), CFORMS2_VERSION );
 			wp_enqueue_style('cforms2');
 		}
 
 		### add calendar
 		if( $cformsSettings['global']['cforms_datepicker']=='1' ){
-			cforms2_enqueue_script_datepicker($localversion, stripslashes($cformsSettings['global']['cforms_dp_date']));
+			cforms2_enqueue_script_datepicker(stripslashes($cformsSettings['global']['cforms_dp_date']));
 		}
-		wp_register_script( 'cforms2', plugin_dir_url(__FILE__) . 'js/cforms.js', array('jquery'), $localversion);
+		wp_register_script( 'cforms2', plugin_dir_url(__FILE__) . 'js/cforms.js', array('jquery'), CFORMS2_VERSION);
 		wp_localize_script( 'cforms2', 'cforms2_ajax', array(
 			'url'    => admin_url('admin-ajax.php'),
 			'nonces' => array(
@@ -1097,7 +1014,8 @@ function cforms2_findlast( $haystack,$needle,$offset=null ){
  * @deprecated since version 14.7.1
  */
 function cforms2_insert( $content ) {
-	global $cformsSettings; $newcontent='';
+	global $cformsSettings;
+	$newcontent='';
 
 	$last=0;
 	if ( ($a=strpos($content,'<!--cforms'))!==false ) {  ### only if form tag is present!
@@ -1131,11 +1049,9 @@ function cforms2_insert( $content ) {
 			$newcontent .= substr($content,$last,$p_offset-$last);
 
 			if( $Fname !== '' ){
-			  if ( cforms2_check_for_taf( $fns[$Fname],cforms2_cfget_pid() ) )
-  				$newcontent .= cforms2('',$fns[$Fname]);
+				$newcontent .= cforms2('',$fns[$Fname]);
 			}else{
-			  if ( cforms2_check_for_taf( $Fid,cforms2_cfget_pid() ) )
-    			$newcontent .= cforms2('',$Fid);
+				$newcontent .= cforms2('',$Fid);
             }
 
 			$p_open_after  = strpos($content,'<p>',$b);
@@ -1187,15 +1103,10 @@ function cforms2_build_fstat($f) {
 if (!function_exists('insert_cform')) {
 function insert_cform($no='',$custom='',$c='') {
 
-	$pid = cforms2_cfget_pid();
-
 	if( !is_numeric($no) )
 		$no = cforms2_check_form_name( $no );
 
-	if ( !$pid )
-		echo cforms2($custom,$no.$c);
-	else
-		echo cforms2_check_for_taf($no,$pid)?cforms2($custom,$no.$c):'';
+	echo cforms2($custom,$no.$c);
 }
 }
 
@@ -1208,21 +1119,6 @@ function cforms2_shortcode($atts, $content) {
 		return '';
 	return cforms2('',cforms2_check_form_name($callform));
 }
-
-### GET $pid
-function cforms2_cfget_pid() {
-	global $post;
-
-	if ( isset($_GET['pid']) )
-		$pid = $_GET['pid'];
-	else if ($post->ID == 0)
-		$pid = false;
-	else
-		$pid = $post->ID;
-
-  return $pid;
-}
-
 
 ### inserts a custom cform anywhere you want
 if (!function_exists('insert_custom_cform')) {
@@ -1249,58 +1145,6 @@ function cforms2_check_form_name($no) {
 }
 
 
-### check if t-f-a is set
-function cforms2_check_for_taf($no,$pid) {
-	global $cformsSettings;
-
-	if ( substr($cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'],0,1)<>'1')
-		return true;
-
-  if( is_single() || in_the_loop() ){
-  	$tmp = get_post_custom($pid);
-  	return ( $tmp["tell-a-friend"][0] == '1' )?true:false;
-  }else
-    return true;
-}
-
-
-### public function: check if post is t-a-f enabled
-if (!function_exists('is_tellafriend')) {
-	function is_tellafriend($pid) {
-		$tmp = get_post_custom($pid);
-		return ($tmp["tell-a-friend"][0]=='1')?true:false;
-	}
-}
-
-
-### WP 2.7 admin menu hook
-function cforms2_post_box(){
-	global $tafstring;
-	echo $tafstring;
-}
-
-
-function cforms2_add_cforms_post_boxes(){
-	add_meta_box('cformspostbox', __('cforms Tell-A-Friend', 'cforms2'), 'cforms2_post_box', 'post', 'normal', 'high');
-	add_meta_box('cformspostbox', __('cforms Tell-A-Friend', 'cforms2'), 'cforms2_post_box', 'page', 'normal', 'high');
-}
-
-
-### Add Tell A Friend processing
-function cforms2_enable_tellafriend($post_ID) {
-
-	if ( isset($_POST['action']) && ($_POST['action']=='autosave' || $_POST['action']=='inline-save')  )
-    	return;
-
-	$tellafriend_status = isset($_POST['tellafriend']);
-
-	if($tellafriend_status && intval($post_ID) > 0)
-		add_post_meta($post_ID, 'tell-a-friend', '1', true);
-	else if ( isset($_POST['post_ID']) )
-		delete_post_meta($post_ID, 'tell-a-friend');
-}
-
-
 ### cforms widget
 function cforms2_widget_init() {
 	global $cformsSettings;
@@ -1309,8 +1153,8 @@ function cforms2_widget_init() {
 	register_widget('cforms2_widget');
 }
 
-### get # of submission left (max subs)
-function cforms2_get_submission_left($no='') {
+### get # of submissions left (max subs)
+function cforms2_get_submission_left($no) {
 	global $wpdb, $cformsSettings;
 
 	if ( $no==0 || $no==1 ) $no='';
@@ -1332,8 +1176,6 @@ function cforms2_localization () {
 	load_plugin_textdomain( 'cforms2' );
 }
 
-### add actions
-global $tafstring;
 
 ### widget init
 add_action('plugins_loaded', 'cforms2_localization' );
@@ -1396,15 +1238,7 @@ function cforms2_field() {
 		'textfield',
 		'textarea',
 		'pwfield',
-		'hidden',
-		'yourname',
-		'youremail',
-		'friendsname',
-		'friendsemail',
-		'cauthor',
-		'email',
-		'url',
-		'comment'
+		'hidden'
 	);
 	static $checkboxgroup = array(
         'checkboxgroup',
@@ -1438,29 +1272,6 @@ function cforms2_field() {
 if ( is_admin() ) {
 	require_once(plugin_dir_path(__FILE__) . 'lib_functions.php');
 	add_action('admin_menu', 'cforms2_menu');
-
-	### Check all forms for TAF and set variables
-	for ( $i=1;$i<=$cformsSettings['global']['cforms_formcount'];$i++ ) {
-		$tafenabled = ( substr($cformsSettings['form'.(($i=='1')?'':$i)]['cforms'.(($i=='1')?'':$i).'_tellafriend'],0,1)=='1') ? true : false;
-		if ( $tafenabled ) break;
-	}
-	$tafform = ($i==1)?'':$i;
-
-	if ( $tafenabled && isset($_GET['post']) ){
-		$edit_post = intval($_GET['post']);
-		$tmp = get_post_custom($edit_post);
-		$taf = $tmp["tell-a-friend"][0];
-
-		$tafchk = ($taf=='1' || ($edit_post=='' && substr($cformsSettings['form'.$tafform]['cforms'.$tafform.'_tellafriend'],1,1)=='1') )?'checked="checked"':'';
-
-		$tafstring = '<label for="tellafriend" class="selectit"><input type="checkbox" id="tellafriend" name="tellafriend" value="1"'. $tafchk .'/>&nbsp;'. __('T-A-F enable this post/page', 'cforms2').'</label>';
-
-		### add admin boxes
-		add_action('admin_menu', 'cforms2_add_cforms_post_boxes');
-		add_action('save_post', 'cforms2_enable_tellafriend');
-
-	} ### if tafenabled
-
 	add_action( 'wp_ajax_cforms2_field', 'cforms2_field' );
 
 	### admin ajax
@@ -1521,17 +1332,8 @@ function cforms2_add_items_options( $admin_bar ){
 
 }
 
-function cforms2_submitcomment_direct() {
-	check_admin_referer( 'submitcomment_direct' );
-	require_once (plugin_dir_path(__FILE__) . 'lib_WPcomment.php');
-	cforms2_new_comment($_POST['cforms_id']);
-	die();
-}
-
 ### attaching to filters
 add_action('init', 'cforms2_delete_db_and_deactivate');
-add_action('wp_ajax_submitcomment_direct', 'cforms2_submitcomment_direct');
-add_action('wp_ajax_nopriv_submitcomment_direct', 'cforms2_submitcomment_direct');
 add_action('wp_enqueue_scripts', 'cforms2_enqueue_scripts');
 add_filter('the_content', 'cforms2_insert', 101);
 add_shortcode('cforms' , 'cforms2_shortcode' );

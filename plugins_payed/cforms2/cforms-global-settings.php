@@ -22,7 +22,6 @@ global $wpdb;
 $wpdb->cformssubmissions	= $wpdb->prefix . 'cformssubmissions';
 $wpdb->cformsdata       	= $wpdb->prefix . 'cformsdata';
 
-### new global settings container, will eventually be the only one!
 $cformsSettings = get_option('cforms_settings');
 
 $plugindir   = dirname(plugin_basename(__FILE__));
@@ -55,39 +54,31 @@ if ( isset($_REQUEST['deletetables']) ) {
 	</div>
 	<?php
 
-} else if( isset($_REQUEST['cforms_rsskeysnew']) ) {
-
-	### new RSS key computed
-	$cformsSettings['global']['cforms_rsskeyall'] = md5(mt_rand());
-	update_option('cforms_settings',$cformsSettings);
-
 } else if( isset($_REQUEST['restoreallcformsdata']) )
 	require_once(plugin_dir_path(__FILE__) . 'lib_options_up.php');
 
 // Update Settings
 if( isset($_REQUEST['SubmitOptions']) ) {
-		
-	$cformsSettings['global']['cforms_html5'] 		  = cforms2_get_boolean_from_request('cforms_html5');
-	$cformsSettings['global']['cforms_show_quicktag'] = cforms2_get_boolean_from_request('cforms_show_quicktag');
-	$cformsSettings['global']['cforms_sec_qa'] = 		cforms2_get_from_request('cforms_sec_qa');
-	$cformsSettings['global']['cforms_codeerr'] = 		cforms2_get_from_request('cforms_codeerr');
-	$cformsSettings['global']['cforms_database'] = 		cforms2_get_boolean_from_request('cforms_database');
-	$cformsSettings['global']['cforms_showdashboard'] = cforms2_get_boolean_from_request('cforms_showdashboard');
-	$cformsSettings['global']['cforms_datepicker'] = 	cforms2_get_boolean_from_request('cforms_datepicker');
-	$cformsSettings['global']['cforms_dp_date'] = 		cforms2_get_from_request('cforms_dp_date');
-	$cformsSettings['global']['cforms_dp_days'] = 		cforms2_get_from_request('cforms_dp_days');
-	$cformsSettings['global']['cforms_dp_start'] = 		cforms2_get_from_request('cforms_dp_start');
-	$cformsSettings['global']['cforms_dp_months'] = 	cforms2_get_from_request('cforms_dp_months');
 
-	$nav=array();
-	$nav[0]=cforms2_get_from_request('cforms_dp_prevY');
-	$nav[1]=cforms2_get_from_request('cforms_dp_prevM');
-	$nav[2]=cforms2_get_from_request('cforms_dp_nextY');
-	$nav[3]=cforms2_get_from_request('cforms_dp_nextM');
-	$nav[4]=cforms2_get_from_request('cforms_dp_close');
-	$nav[5]=cforms2_get_from_request('cforms_dp_choose');
-	$nav[6]=cforms2_get_boolean_from_request('cforms_dp_Ybuttons');
-	$cformsSettings['global']['cforms_dp_nav'] = $nav;
+	$cforms_dp_nav = stripslashes(cforms2_get_from_request('cforms_dp_nav'));
+	if (empty($cforms_dp_nav)) {
+		$cforms_dp_nav = array();
+	} else {
+		$cforms_dp_nav = json_decode($cforms_dp_nav, true);
+		if ($cforms_dp_nav === null) {
+			// As WordPress has a compatibility layer, json_last_error_msg (PHP >= 5.5) can be used
+			$cforms_dp_nav = array("ERROR" => json_last_error_msg());
+		}
+	}
+	$cformsSettings['global']['cforms_dp_nav']        = $cforms_dp_nav;
+	$cformsSettings['global']['cforms_html5']         = cforms2_get_boolean_from_request('cforms_html5');
+	$cformsSettings['global']['cforms_show_quicktag'] = cforms2_get_boolean_from_request('cforms_show_quicktag');
+	$cformsSettings['global']['cforms_sec_qa']        = cforms2_get_from_request('cforms_sec_qa');
+	$cformsSettings['global']['cforms_codeerr']       = cforms2_get_from_request('cforms_codeerr');
+	$cformsSettings['global']['cforms_database']      = cforms2_get_boolean_from_request('cforms_database');
+	$cformsSettings['global']['cforms_showdashboard'] = cforms2_get_boolean_from_request('cforms_showdashboard');
+	$cformsSettings['global']['cforms_datepicker']    = cforms2_get_boolean_from_request('cforms_datepicker');
+	$cformsSettings['global']['cforms_dp_date']       = cforms2_get_from_request('cforms_dp_date');
 
  	$cformsSettings['global']['cforms_inexclude']['ex'] = '';
 
@@ -119,8 +110,6 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 	$cap['ac']= cforms2_get_from_request('cforms_cap_ac');
 	
     ###	update new settings container
-	$cformsSettings['global']['cforms_rssall'] = cforms2_get_from_request('cforms_rss')?true:false;
-	$cformsSettings['global']['cforms_rssall_count'] = cforms2_get_from_request('cforms_rsscount');
 	$cformsSettings['global']['cforms_captcha_def'] = $cap;
 
 	update_option('cforms_settings',$cformsSettings);
@@ -194,7 +183,7 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 	
     <p><?php _e('All settings and configuration options on this page apply to all forms.', 'cforms2') ?></p>
 
-	<form enctype="multipart/form-data" id="cformsdata" name="mainform" method="post" action="">
+	<form enctype="multipart/form-data" id="cformsdata" name="mainform" method="post">
 		<input type="hidden" name="cforms_database_new" value="<?php if($cformsSettings['global']['cforms_database']=="0") echo 'true'; ?>"/>
 
 		<fieldset id="inandexclude" class="cformsoptions">
@@ -238,37 +227,8 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 					<td class="obR"><input type="text" id="cforms_dp_date" name="cforms_dp_date" value="<?php echo stripslashes(htmlspecialchars( $cformsSettings['global']['cforms_dp_date'] )); ?>"/><a href="http://api.jqueryui.com/datepicker/#utility-formatDate"><?php _e('See supported date formats &raquo;', 'cforms2'); ?></a></td>
 				</tr>
 				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_days"><strong><?php _e('Days (Columns)', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_days" name="cforms_dp_days" value="<?php echo stripslashes(htmlspecialchars( $cformsSettings['global']['cforms_dp_days'] )); ?>"/></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_months"><strong><?php _e('Months', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_months" name="cforms_dp_months" value="<?php echo stripslashes(htmlspecialchars( $cformsSettings['global']['cforms_dp_months'] )); ?>"/></td>
-				</tr>
-				<tr class="ob">
-					<?php $nav = $cformsSettings['global']['cforms_dp_nav']; ?>
-					<td class="obL"></td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_dp_Ybuttons" name="cforms_dp_Ybuttons" <?php if($nav[6]=="1") echo "checked=\"checked\""; ?>/><label for="cforms_dp_Ybuttons"><strong><?php _e('Enable year selection drop down', 'cforms2') ?></strong></label></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_prevM"><strong><?php _e('Previous Month', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_prevM" name="cforms_dp_prevM" value="<?php echo stripslashes(htmlspecialchars( $nav[1] )); ?>"/></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_nextM"><strong><?php _e('Next Month', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_nextM" name="cforms_dp_nextM" value="<?php echo stripslashes(htmlspecialchars( $nav[3] )); ?>"/></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_close"><strong><?php _e('Close', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_close" name="cforms_dp_close" value="<?php echo stripslashes(htmlspecialchars( $nav[4] )); ?>"/></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_choose"><strong><?php _e('Choose Date', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_choose" name="cforms_dp_choose" value="<?php echo stripslashes(htmlspecialchars( $nav[5] )); ?>"/></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"><label for="cforms_dp_start"><strong><?php _e('Week start day', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input type="text" id="cforms_dp_start" name="cforms_dp_start" value="<?php echo stripslashes(htmlspecialchars( $cformsSettings['global']['cforms_dp_start'] )); ?>"/> <?php _e('0=Sunday, 1=Monday, etc.', 'cforms2'); ?></td>
+					<td class="obL"><label for="cforms_dp_nav"><strong><a href="http://api.jqueryui.com/datepicker/"><?php _e('Additional options (JSON)', 'cforms2') ?></a></strong></label></td>
+					<td class="obR"><textarea name="cforms_dp_nav" id="cforms_dp_nav" placeholder="{ &quot;changeYear&quot; : true }"><?php echo htmlspecialchars(json_encode($cformsSettings['global']['cforms_dp_nav'], JSON_PRETTY_PRINT)) ?></textarea></td>
 				</tr>
 				</table>
 			</div>
@@ -314,35 +274,35 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 				<tr class="ob">
 					<td class="obL"><label for="cforms_upload_err5"><strong><?php _e('File type not allowed', 'cforms2'); ?></strong></label></td>
 					<td class="obR">
-						<table><tr><td><textarea rows="80px" cols="280px" class="errmsgbox" name="cforms_upload_err5" id="cforms_upload_err5" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err5'])); ?></textarea></td></tr></table>
+						<table><tr><td><textarea class="errmsgbox" name="cforms_upload_err5" id="cforms_upload_err5" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err5'])); ?></textarea></td></tr></table>
 					</td>
 				</tr>
 
 				<tr class="ob">
 					<td class="obL"><label for="cforms_upload_err1"><strong><?php _e('Generic (unknown) error', 'cforms2'); ?></strong></label></td>
 					<td class="obR">
-						<table><tr><td><textarea rows="80px" cols="280px" class="errmsgbox" name="cforms_upload_err1" id="cforms_upload_err1" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err1'])); ?></textarea></td></tr></table>
+						<table><tr><td><textarea class="errmsgbox" name="cforms_upload_err1" id="cforms_upload_err1" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err1'])); ?></textarea></td></tr></table>
 					</td>
 				</tr>
 
 				<tr class="ob">
 					<td class="obL"><label for="cforms_upload_err2"><strong><?php _e('File is empty', 'cforms2'); ?></strong></label></td>
 					<td class="obR">
-						<table><tr><td><textarea  rows="80px" cols="280px" class="errmsgbox" name="cforms_upload_err2" id="cforms_upload_err2" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err2'])); ?></textarea></td></tr></table>
+						<table><tr><td><textarea  class="errmsgbox" name="cforms_upload_err2" id="cforms_upload_err2" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err2'])); ?></textarea></td></tr></table>
 					</td>
 				</tr>
 
 				<tr class="ob">
 					<td class="obL"><label for="cforms_upload_err3"><strong><?php _e('File size too big', 'cforms2'); ?></strong></label></td>
 					<td class="obR">
-						<table><tr><td><textarea rows="80px" cols="280px" class="errmsgbox" name="cforms_upload_err3" id="cforms_upload_err3" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err3'])); ?></textarea></td></tr></table>
+						<table><tr><td><textarea class="errmsgbox" name="cforms_upload_err3" id="cforms_upload_err3" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err3'])); ?></textarea></td></tr></table>
 					</td>
 				</tr>
 
 				<tr class="ob">
 					<td class="obL"><label for="cforms_upload_err4"><strong><?php _e('Error during upload', 'cforms2'); ?></strong></label></td>
 					<td class="obR">
-						<table><tr><td><textarea rows="80px" cols="280px" class="errmsgbox" name="cforms_upload_err4" id="cforms_upload_err4" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err4'])); ?></textarea></td></tr></table>
+						<table><tr><td><textarea class="errmsgbox" name="cforms_upload_err4" id="cforms_upload_err4" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_upload_err4'])); ?></textarea></td></tr></table>
 					</td>
 				</tr>
 				</table>
@@ -365,7 +325,10 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 				</table>
 			</div>
 		</fieldset>
-		<?php if (class_exists('cforms2_really_simple_captcha', false)) : ?>
+		<?php
+			$cap = $cformsSettings['global']['cforms_captcha_def'];
+			if (class_exists('cforms2_really_simple_captcha', false)) :
+		?>
 		<fieldset id="captcha" class="cformsoptions">
 			<div class="cflegend op-closed" id="p26" title="<?php _e('Expand/Collapse', 'cforms2') ?>">
             	<a class="helptop" href="#top"><?php _e('top', 'cforms2'); ?></a><div class="blindplus"></div><?php _e('CAPTCHA Image Settings', 'cforms2')?>
@@ -374,7 +337,6 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 			<div class="cf-content" id="o26">
 
 				<?php
-					$cap = $cformsSettings['global']['cforms_captcha_def'];
 					$h = cforms2_prep( $cap['h'],25 );
 					$w = cforms2_prep( $cap['w'],115 );
 					$c = cforms2_prep( $cap['c'],'#000066' );
@@ -471,7 +433,7 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 				<tr class="ob space15">
 					<td class="obL"><label for="cforms_codeerr"><?php _e('<strong>Failure message</strong><br />(for a wrong answer)', 'cforms2'); ?></label></td>
 					<td class="obR">
-						<table><tr><td><textarea rows="80px" cols="280px" name="cforms_codeerr" id="cforms_codeerr" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_codeerr'])); ?></textarea></td></tr></table>
+						<table><tr><td><textarea name="cforms_codeerr" id="cforms_codeerr" ><?php echo stripslashes(htmlspecialchars($cformsSettings['global']['cforms_codeerr'])); ?></textarea></td></tr></table>
 					</td>
 				</tr>
 
@@ -479,7 +441,7 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 
 				<tr class="ob">
 					<td class="obL"><label for="cforms_sec_qa"><?php _e('<strong>Questions &amp; Answers</strong><br />format: Q=A', 'cforms2') ?></label></td>
-					<td class="obR"><table><tr><td><textarea rows="80px" cols="280px" name="cforms_sec_qa" id="cforms_sec_qa" ><?php echo $qa; ?></textarea></td></tr></table></td>
+					<td class="obR"><table><tr><td><textarea name="cforms_sec_qa" id="cforms_sec_qa" ><?php echo $qa; ?></textarea></td></tr></table></td>
 				</tr>
 				</table>
 			</div>
@@ -510,44 +472,15 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 					<td class="obL"><label for="cforms_showdashboard"><strong><?php _e('Show on dashboard', 'cforms2') ?></strong></label></td>
 					<td class="obR"><input class="allchk" type="checkbox" id="cforms_showdashboard" name="cforms_showdashboard" <?php if($cformsSettings['global']['cforms_showdashboard']=="1") echo "checked=\"checked\""; ?>/> <?php _e('Make sure to enable your forms individually as well!', 'cforms2') ?></td>
 				</tr>
-
-				<tr class="ob">
-					<td class="obL"><label for="cforms_rss"><strong><?php _e('Enable global RSS', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_rss" name="cforms_rss" <?php if( $cformsSettings['global']['cforms_rssall'] ) echo "checked=\"checked\""; ?>/> <?php _e('Enables an RSS feed to track all new submissions across all forms.', 'cforms2'); ?></td>
-				</tr>
-
-				<?php if( current_user_can('track_cforms') && $cformsSettings['global']['cforms_rssall'] ) : ?>
-				<tr class="ob">
-					<td class="obL"></td>
-					<td class="obR">
-						<?php $j = $cformsSettings['global']['cforms_rssall_count']; $j = (int)abs($j)>20 ? 20:(int)abs($j); ?>
-						<select name="cforms_rsscount" id="cforms_rsscount"><?php
-                            for ($i=1;$i<=20;$i++) {
-                                echo '<option'.(($i==$j)?' selected="selected"':'').'>' .$i. '</option>';
-                            }
-                        ?></select>
-                    	<label for="cforms_rsscount"><?php _e('Number of shown RSS entries', 'cforms2'); ?></label>
-                    </td>
-				</tr>
-				<tr class="ob">
-					<td class="obL" style="padding-top:8px; vertical-align:top;"><label for="cforms_rsskey"><strong><?php _e('RSS Feed Security Key', 'cforms2'); ?><br /><br /></strong></label></td>
-					<td class="obR">
-						<input name="cforms_rsskeyall" id="cforms_rsskey" value="<?php echo $cformsSettings['global']['cforms_rsskeyall'];  ?>" />
-						<input type="submit" name="cforms_rsskeysnew" id="cforms_rsskeysnew" value="<?php _e('Reset RSS Key', 'cforms2');  ?>" class="allbuttons"  onclick="javascript:document.mainform.action='#tracking';"/>
-						<br /><?php _e('The complete RSS URL &raquo;', 'cforms2'); echo '<br />'.network_site_url().'?cformsRSS='.urlencode('-1$#$').$cformsSettings['global']['cforms_rsskeyall']; ?>
-					</td>
-				</tr>
-				<?php endif; ?>
-
 				</table>
 			</div>
 		</fieldset>
 
 	    <div class="cf_actions" id="cf_actions" style="display:none;">
 			<input id="cfbar-showinfo" class="allbuttons addbutton" type="submit" name="showinfo" value=""/>
-			<input id="cfbar-deleteall" class="jqModalDelAll allbuttons deleteall" type="button" name="deleteallbutton" value=""/>
+			<input id="cfbar-deleteall" class="jqModalDelAll allbuttons deleteall" type="button" name="deleteallbutton" value=" "/>
 			<input id="deletetables" class="allbuttons deleteall" type="submit" name="deletetables" value=""/>
-			<input id="backup" type="button" class="jqModalBackup allbuttons" name="backup"  value=""/>
+			<input id="backup" type="button" class="jqModalBackup allbuttons" name="backup"  value=" "/>
 			<input id="cfbar-SubmitOptions" type="submit" name="SubmitOptions" class="allbuttons updbutton formupd" value="" />
 	    </div>
 		
@@ -561,7 +494,7 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 <div class="jqmWindow" id="cf_backupbox">
     <div class="cf_ed_header"><?php _e('Backup &amp; Restore All Settings','cforms2'); ?></div>
     <div class="cf_ed_main_backup">
-        <form enctype="multipart/form-data" action="" name="backupform" method="post">
+        <form enctype="multipart/form-data" name="backupform" method="post">
             <div class="controls">
 
 				<p class="ex"><?php _e('Restoring all settings will overwrite all form specific &amp; global settings!', 'cforms2') ?></p>
@@ -570,7 +503,7 @@ if( isset($_REQUEST['SubmitOptions']) ) {
                 	<input type="file" id="importall" name="importall" size="25" /><input type="submit" name="restoreallcformsdata" title="<?php _e('Restore all settings now!', 'cforms2') ?>" class="allbuttons deleteall" value="<?php _e('Restore all settings now!', 'cforms2') ?>" onclick="return confirm('<?php _e('With a broken backup file, this action may erase all your settings! Do you want to continue?', 'cforms2') ?>');"/>
 				</p>
 				<em><?php _e('PS: Individual form configurations can be backup up on the respective form admin page.', 'cforms2') ?></em>
-                <p class="cancel"><a href="#" id="cancel" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></p>
+                <p class="cancel"><a href="#" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></p>
 
             </div>
             <input type="hidden" name="noSub" value="<?php if (!empty($noDISP)) echo $noDISP; ?>"/>
@@ -580,14 +513,14 @@ if( isset($_REQUEST['SubmitOptions']) ) {
 <div class="jqmWindow" id="cf_delall_dialog">
     <div class="cf_ed_header"><?php _e('Uninstalling / Removing cforms','cforms2'); ?></div>
     <div class="cf_ed_main_backup">
-        <form action="" name="deleteform" method="post">
+        <form name="deleteform" method="post">
             <div id="cf_target_del"><?php _e('Warning!','cforms2'); ?></div>
             <div class="controls">
 				<p><?php _e('Generally, simple deactivation of cforms does <strong>not</strong> erase any of its data. If you like to quit using cforms for good, please erase all data before deactivating the plugin.', 'cforms2') ?></p>
 				<p><strong><?php _e('This is irrevocable!', 'cforms2') ?></strong>&nbsp;&nbsp;&nbsp;<br />
 					 <input type="submit" name="cfdeleteall" title="<?php _e('Are you sure you want to do this?!', 'cforms2') ?>" class="allbuttons deleteall" value="<?php _e('DELETE *ALL* CFORMS DATA', 'cforms2') ?>" onclick="return confirm('<?php _e('Final Warning!', 'cforms2') ?>');"/></p>
 
-                <p class="cancel"><a href="#" id="cancel" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></p>
+                <p class="cancel"><a href="#" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></p>
             </div>
         </form>
     </div>

@@ -1,7 +1,7 @@
 <?php
 /*
- * Copyright (c) 2012 Oliver Seidel (email : oliver.seidel @ deliciousdays.com)
- * Copyright (c) 2014 Bastian Germann
+ * Copyright (c) 2012      Oliver Seidel (email : oliver.seidel @ deliciousdays.com)
+ * Copyright (c) 2014-2016 Bastian Germann
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,13 @@ if ( !defined( 'WP_UNINSTALL_PLUGIN' ) )
 
 delete_option('cforms_settings');
 
+$role = get_role('administrator');
+if($role != null) {
+	$role->remove_cap('manage_cforms');
+	$role->remove_cap('track_cforms');
+}
+
 global $wpdb;
+$wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key = 'tell-a-friend'");
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'cformssubmissions');
 $wpdb->query('DROP TABLE IF EXISTS ' . $wpdb->prefix . 'cformsdata');

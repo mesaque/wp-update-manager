@@ -1,7 +1,7 @@
 <?php
 /*
 * Tiny Compress Images - WordPress plugin.
-* Copyright (C) 2015 Voormedia B.V.
+* Copyright (C) 2015-2016 Voormedia B.V.
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the Free
@@ -109,10 +109,11 @@ class Tiny_Compress_Curl extends Tiny_Compress {
 
         $response = curl_exec($request);
         $header_size = curl_getinfo($request, CURLINFO_HEADER_SIZE);
+        $status_code = curl_getinfo($request, CURLINFO_HTTP_CODE);
         $headers = self::parse_headers(substr($response, 0, $header_size));
         curl_close($request);
 
-        return array(substr($response, $header_size), $headers);
+        return array(substr($response, $header_size), $headers, $status_code);
     }
 
     private function add_proxy_options($url, $options) {

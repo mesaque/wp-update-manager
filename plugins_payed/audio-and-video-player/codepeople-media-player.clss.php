@@ -80,10 +80,10 @@ class CodePeopleMediaPlayer {
 								
 							$skins_list .= '
 									<img 
-										src="'.((isset($skin_data['thumbnail'])) ? CPMP_PLUGIN_URL.'/skins/'.$entry.'/'.$skin_data['thumbnail'] : CPMP_PLUGIN_URL.'/images/thumbnail.jpg').'" 
-										title="'.((isset($skin_data['name'])) ?  $skin_data['name'] : $skin_data['id']).' - Available"
-										onclick="cpmp.set_skin(this, \''.$skin_data['id'].'\', \''.((isset($skin_data[$type]["width"])) ? $skin_data[$type]["width"] : '').'\', \''.((isset($skin_data[$type]["height"])) ? $skin_data[$type]["height"] : '').'\');"';
-							$skins_list_script .= 'cpmp_skin_list['.$c.']="'.$skin_data['id'].'";';
+										src="'.esc_url((isset($skin_data['thumbnail'])) ? CPMP_PLUGIN_URL.'/skins/'.$entry.'/'.$skin_data['thumbnail'] : CPMP_PLUGIN_URL.'/images/thumbnail.jpg').'" 
+										title="'.esc_attr((isset($skin_data['name'])) ?  $skin_data['name'] : $skin_data['id']).' - Available"
+										onclick="cpmp.set_skin(this, \''.esc_js($skin_data['id']).'\', \''.esc_js((isset($skin_data[$type]["width"])) ? $skin_data[$type]["width"] : '').'\', \''.esc_js((isset($skin_data[$type]["height"])) ? $skin_data[$type]["height"] : '').'\');"';
+							$skins_list_script .= 'cpmp_skin_list['.$c.']="'.esc_js($skin_data['id']).'";';
 							$c++;
 							
 							if($selected_skin == $skin_data['id']){
@@ -180,7 +180,7 @@ class CodePeopleMediaPlayer {
 ?>		
 				
 			
-					<form method="post" action="<?php $_SERVER['REQUEST_URI']; ?>">
+					<form method="post" action="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>">
 					<?php
 						// create a custom nonce for submit verification later
 						echo '<input type="hidden" name="cpmp_player_edition_nonce" value="' . wp_create_nonce(__FILE__) . '" />';
@@ -191,7 +191,7 @@ class CodePeopleMediaPlayer {
 							<select id="player_id" name="player_id">
 							<?php
 								foreach($players as $player){
-									print '<option value="'.$player->id.'">'.stripslashes($player->player_name).'</option>';
+									print '<option value="'.esc_attr($player->id).'">'.stripslashes($player->player_name).'</option>';
 								}
 							?>
 							</select>
@@ -208,7 +208,7 @@ class CodePeopleMediaPlayer {
 			} // End player edition	
 			else{	
 ?>						
-					<form method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">	
+					<form method="post" action="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>">	
 						<?php
 							// create a custom nonce for submit verification later
 							echo '<input type="hidden" name="cpmp_player_creation_nonce" value="' . wp_create_nonce(__FILE__) . '" />';
@@ -269,10 +269,10 @@ class CodePeopleMediaPlayer {
                         <tr valign="top">
                             <th scope="row">Paypal button for instant purchases</th>
                             <td>
-                            <input type="radio" DISABLED /><img src="<?php print(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_a.gif'); ?>" />
-                            <input type="radio" DISABLED /><img src="<?php print(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_b.gif'); ?>" />
-                            <input type="radio" DISABLED CHECKED /><img src="<?php print(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_c.gif'); ?>" />
-                            <input type="radio" DISABLED /><img src="<?php print(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_d.gif'); ?>" />
+                            <input type="radio" DISABLED /><img src="<?php echo esc_url(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_a.gif'); ?>" />
+                            <input type="radio" DISABLED /><img src="<?php echo esc_url(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_b.gif'); ?>" />
+                            <input type="radio" DISABLED CHECKED /><img src="<?php echo esc_url(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_c.gif'); ?>" />
+                            <input type="radio" DISABLED /><img src="<?php echo esc_url(CPMP_PLUGIN_URL.'/images/paypal_buttons/button_d.gif'); ?>" />
                             </td>
                         </tr> 
                     
@@ -330,7 +330,7 @@ class CodePeopleMediaPlayer {
 			
 			if(wp_verify_nonce($_POST['cpmp_player_edition_nonce'],__FILE__) && isset($_POST['player_id'])){ // Edition 
 				$player_id = $_POST['player_id'];
-				$player 	= $wpdb->get_row('SELECT * FROM '.$wpdb->prefix.CPMP_PLAYER.' WHERE id='.$player_id);
+				$player 	= $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM '.$wpdb->prefix.CPMP_PLAYER.' WHERE id=%d', $player_id ) );
 				$config 	= unserialize($player->config);
 				$playlist 	= unserialize($player->playlist);
 				
@@ -344,10 +344,10 @@ class CodePeopleMediaPlayer {
 
 				if($playlist){
 					foreach($playlist as $item){
-						$playlist_item_list .= '<div id="'.$item->id.'" class="playlist_item" style="cursor:pointer;">
-						<input type="button" value="Up" onclick="cpmp.move_item(\''.$item->id.'\', -1);" >
-						<input type="button" value="Down" onclick="cpmp.move_item(\''.$item->id.'\', 1);" >
-						<input type="button" value="Delete item" onclick="cpmp.delete_item(\''.$item->id.'\');"><span>'.$item->annotation.'</span></div>';
+						$playlist_item_list .= '<div id="'.esc_attr($item->id).'" class="playlist_item" style="cursor:pointer;">
+						<input type="button" value="Up" onclick="cpmp.move_item(\''.esc_js($item->id).'\', -1);" >
+						<input type="button" value="Down" onclick="cpmp.move_item(\''.esc_js($item->id).'\', 1);" >
+						<input type="button" value="Delete item" onclick="cpmp.delete_item(\''.esc_js($item->id).'\');"><span>'.$item->annotation.'</span></div>';
 					}
 				}
 				$insertion_button_text = __('Update Media Player');
@@ -364,11 +364,11 @@ class CodePeopleMediaPlayer {
 			$skin_list = $this->_get_skin_list($config->skin, $config->type, $width_limit, $height_limit);
 	?>
 			<div class="wrap">
-				<form id="cpmp_media_player_form" method="post" action="<?php echo $_SERVER['REQUEST_URI']; ?>">
-					<input type="hidden" value="<?php echo ((isset($config->skin)) ? $config->skin : ''); ?>" name="cpmp_skin" />
+				<form id="cpmp_media_player_form" method="post" action="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>">
+					<input type="hidden" value="<?php echo esc_attr((isset($config->skin)) ? $config->skin : ''); ?>" name="cpmp_skin" />
 					<?php
-						if(isset($player_id)) echo '<input type="hidden" value="'.$player_id.'" name="cpmp_player_id" />';
-						if(isset($config->type)) echo '<input type="hidden" value="'.$config->type.'" name="cpmp_type" />';
+						if(isset($player_id)) echo '<input type="hidden" value="'.esc_attr($player_id).'" name="cpmp_player_id" />';
+						if(isset($config->type)) echo '<input type="hidden" value="'.esc_attr($config->type).'" name="cpmp_type" />';
 						
 					?>
 					<div class="updated" style="padding:5px;">
@@ -484,7 +484,7 @@ class CodePeopleMediaPlayer {
 													</th>
 													<td>
 														<input type="text" name="item_poster" id="item_poster" class="item_poster" />
-														<input type="button" title="<?php _e('Select the item poster'); ?>" onclick="avp_select_file( this );" value="<?php _e('Select Poster'); ?>" />
+														<input type="button" title="<?php esc_attr_e(__('Select the item poster')); ?>" onclick="avp_select_file( this );" value="<?php esc_attr_e(__('Select Poster')); ?>" />
 														<br />
 														<span style="font-style:italic; color:#666;">
 														<?php 
@@ -501,7 +501,7 @@ class CodePeopleMediaPlayer {
 													<td>
 														<div>
 															<input type="text" name="item_file[]" class="item_file" id="item_file" value="" >
-															<input type="button" onclick="avp_select_file(this);" title="<?php _e('Select the item file'); ?>" value="<?php _e('Select File'); ?>" />
+															<input type="button" onclick="avp_select_file(this);" title="<?php esc_attr_e(__('Select the item file')); ?>" value="<?php esc_attr_e(__('Select File')); ?>" />
 															<input type="button" value="Add another one" onclick="cpmp.add_field(this, 'item_file')">
 														</div>	
 														<br />
@@ -534,8 +534,8 @@ class CodePeopleMediaPlayer {
 												<tr>
 													<td></td>
 													<td>
-														<input type="button" name="insert_item" value="<?php _e('Insert / Update item on playlist'); ?>" class="button-primary" onclick="cpmp.add_item();"> 
-														<input type="button" name="clear_item_form" value="<?php _e('Cancel'); ?>" class="button-primary" onclick="cpmp.clear_item_form();cpmp.hide_item_form();">
+														<input type="button" name="insert_item" value="<?php esc_attr_e(__('Insert / Update item on playlist')); ?>" class="button-primary" onclick="cpmp.add_item();"> 
+														<input type="button" name="clear_item_form" value="<?php esc_attr_e(__('Cancel')); ?>" class="button-primary" onclick="cpmp.clear_item_form();cpmp.hide_item_form();">
 													</td>	
 												</tr>
 											</tbody>
@@ -554,8 +554,8 @@ class CodePeopleMediaPlayer {
 							</tr>
 							<tr valign="top">
 								<td>
-									<input type="button" id="create" name="create" value="<?php echo $insertion_button_text; ?>" class="button-primary" onclick="cpmp.submit_item_form();" />
-									<a type="button" class="button-primary" href="<?php echo $_SERVER['REQUEST_URI']; ?>">Cancel</a>
+									<input type="button" id="create" name="create" value="<?php esc_attr_e($insertion_button_text); ?>" class="button-primary" onclick="cpmp.submit_item_form();" />
+									<a type="button" class="button-primary" href="<?php echo esc_url($_SERVER['REQUEST_URI']); ?>">Cancel</a>
 								</td>
 							</tr>
 						</tbody>
@@ -611,7 +611,7 @@ class CodePeopleMediaPlayer {
 	
 	// Button in the post edition for media player insertion
 	function insert_player_button(){
-		print '<a href="javascript:cpmp.open_insertion_window();" title="'.__('Insert Media Player').'"><img src="'.CPMP_PLUGIN_URL.'/images/cpmp.gif'.'" alt="'.__('Insert Media Player').'" /></a>';
+		print '<a href="javascript:cpmp.open_insertion_window();" title="'.esc_attr(__('Insert Media Player')).'"><img src="'.esc_url(CPMP_PLUGIN_URL.'/images/cpmp.gif').'" alt="'.esc_attr(__('Insert Media Player')).'" /></a>';
 	}// End insert_player_button
 	
 	// Load the player button scripts and initialize the insertion dialog
@@ -636,7 +636,7 @@ class CodePeopleMediaPlayer {
 		$options = '';
 		$label   = '';	
 		if(count($player)){
-			$tag = '<input id="cpmp_media_player" type="radio" value="'.$player->id.'" checked />'.stripslashes($player->player_name);
+			$tag = '<input id="cpmp_media_player" type="radio" value="'.esc_attr($player->id).'" checked />'.stripslashes($player->player_name);
 			$label = __('Select the player to insert:');
 		}else{
 			$tag = 'You must to define a media player before use it on page/post. <a href="options-general.php?page=codepeople-media-player.php">Create a media player here</a>';
@@ -663,7 +663,7 @@ class CodePeopleMediaPlayer {
 		extract($atts);
 		
 		if(isset($id)){
-			$sql = 'SELECT * FROM '.$wpdb->prefix.CPMP_PLAYER.' WHERE id='.$id;
+			$sql = $wpdb->prepare('SELECT * FROM '.$wpdb->prefix.CPMP_PLAYER.' WHERE id=%d', $id);
 			$player = $wpdb->get_row($sql);
 
 			if($player != null){
@@ -683,15 +683,15 @@ class CodePeopleMediaPlayer {
 					$width = trim( $config_obj->width );
 					if( is_numeric( $width ) ) $width .= 'px';
 					$styles .= 'width:'.$width.';'; 
-					$mp_atts[] = 'width="'.$config_obj->width.'"';
+					$mp_atts[] = 'width="'.esc_attr($config_obj->width).'"';
 				}
 				$styles .= '"';
-				if($config_obj->height) $mp_atts[] = 'height="'.$config_obj->height.'"';
+				if($config_obj->height) $mp_atts[] = 'height="'.esc_attr($config_obj->height).'"';
 				
-				$mp_atts[] = 'class="codepeople-media'.(($config_obj->skin) ? ' '.$config_obj->skin : '').'"';
-				if(isset($config_obj->loop)) $mp_atts[] = 'loop="'.$config_obj->loop.'"';
-				if(isset($config_obj->autoplay)) $mp_atts[] = 'autoplay="'.$config_obj->autoplay.'"';
-				if(isset($config_obj->preload)) $mp_atts[] = 'preload="'.$config_obj->preload.'"';
+				$mp_atts[] = 'class="codepeople-media'.esc_attr(($config_obj->skin) ? ' '.$config_obj->skin : '').'"';
+				if(isset($config_obj->loop)) $mp_atts[] = 'loop="'.esc_attr($config_obj->loop).'"';
+				if(isset($config_obj->autoplay)) $mp_atts[] = 'autoplay="'.esc_attr($config_obj->autoplay).'"';
+				if(isset($config_obj->preload)) $mp_atts[] = 'preload="'.esc_attr($config_obj->preload).'"';
 				
 				$first_item = true;
 				// Set sources and playlist
@@ -731,10 +731,10 @@ class CodePeopleMediaPlayer {
 						
                         if($first_item){
                             if(!empty($item->poster)) $mp_atts[] = 'poster="'.esc_url($item->poster).'"';
-							$srcs[] = '<source src="'.$file.'" type="'.$config_obj->type.'/'.$ext.'" />';
+							$srcs[] = '<source src="'.esc_url($file).'" type="'.esc_attr($config_obj->type.'/'.$ext).'" />';
 						}
 						
-						$item_srcs[] = '{"src":"'.$file.'","type":"'.$config_obj->type.'/'.$ext.'"}';
+						$item_srcs[] = '{"src":"'.esc_js($file).'","type":"'.esc_attr($config_obj->type.'/'.$ext).'"}';
 						
 						$flag = false;
 					}
@@ -743,8 +743,8 @@ class CodePeopleMediaPlayer {
 						$location = htmlspecialchars($subtitle->link);
 						$language = $subtitle->language;
                         if($first_item)
-                            $mp_subtitles[] = '<track src="'.$location.'" kind="subtitles" srclang="'.$language.'"></track>';
-						$item_subtitles[] = '{"kind" : "subtitles", "src" : "'.$location.'", "srclang" : "'.$language.'"}';
+                            $mp_subtitles[] = '<track src="'.esc_url($location).'" kind="subtitles" srclang="'.esc_attr($language).'"></track>';
+						$item_subtitles[] = '{"kind" : "subtitles", "src" : "'.esc_js($location).'", "srclang" : "'.esc_js($language).'"}';
 					}
 					
 					$pl_items[] = '<li value=\'{'.
@@ -791,7 +791,7 @@ class CodePeopleMediaPlayer {
 				);
                 
 				$sub_id = mt_rand(1, 99999);
-				return '<div id="ms_avp" '.$styles.'><'.$config_obj->type.' id="'.$id.$sub_id.'" '.implode(' ', $mp_atts).'>'.implode('',$srcs).implode('', $mp_subtitles).'</'.$config_obj->type.'>'.((count($pl_items) > 0 && $config_obj->playlist) ? '<ul id="'.$id.$sub_id.'-list">'.implode(' ', $pl_items).'</ul>' : '').'<noscript>audio-and-video-player require JavaScript</noscript></div>';
+				return '<div id="ms_avp" '.$styles.'><'.$config_obj->type.' id="'.esc_attr($id.$sub_id).'" '.implode(' ', $mp_atts).'>'.implode('',$srcs).implode('', $mp_subtitles).'</'.$config_obj->type.'>'.((count($pl_items) > 0 && $config_obj->playlist) ? '<ul id="'.esc_attr($id.$sub_id).'-list">'.implode(' ', $pl_items).'</ul>' : '').'<noscript>audio-and-video-player require JavaScript</noscript></div>';
 				
 			}else{
 				return '';

@@ -18,15 +18,19 @@
  */
 
 function cforms2_setup_db () {
-global $wpdb, $cformsSettings, $localversion;
+global $wpdb, $cformsSettings;
 $cformsSettings = get_option('cforms_settings');
+if (!is_array($cformsSettings)) {
+	$cformsSettings = array();
+	$cformsSettings['global'] = array();
+}
 
 ### new global settings container
 
 ### Common HTML message information
 
 $cformsSettings['global']['cforms_style_doctype'] 	= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">';
-$cformsSettings['global']['v'] = $localversion;
+$cformsSettings['global']['v'] = CFORMS2_VERSION;
 
 unset ( $cformsSettings['global']['cforms_style'] );
 $cformsSettings['global']['cforms_style']['body'] 	= 'style="margin:0; padding:0; font-family: Verdana, Arial; font-size: 13px; color:#555;"';
@@ -56,11 +60,6 @@ cforms2_setINI('form','cforms_upload_dir', $wp_upload_dir['basedir'] );
 cforms2_setINI('form','cforms_upload_ext', 'txt,zip,doc,rtf,xls');
 cforms2_setINI('form','cforms_upload_size', '1024');
 cforms2_setINI('form','cforms_dontclear', false);
-
-### tracking settings
-cforms2_setINI('form','cforms_rsskey', md5(mt_rand()) );
-cforms2_setINI('form','cforms_rss', false );
-cforms2_setINI('form','cforms_rss_count', 5 );
 
 ### fields for default form
 cforms2_setINI('form','cforms_count_fields', '5');
@@ -112,7 +111,7 @@ cforms2_setINI('form','cforms_action_page', 'http://');
 cforms2_setINI('form','cforms_tracking', '');
 cforms2_setINI('form','cforms_showdashboard', '1');
 cforms2_setINI('form','cforms_maxentries', '');
-cforms2_setINI('form','cforms_tellafriend', '01');
+cforms2_setINI('form','cforms_tellafriend', '0');
 cforms2_setINI('form','cforms_dashboard', '0');
 
 ### global file settings
@@ -123,10 +122,6 @@ cforms2_setINI('global','cforms_upload_err2', __('File is empty. Please upload s
 cforms2_setINI('global','cforms_upload_err3', __('Sorry, file is too large. You may try to zip your file.', 'cforms2'));
 cforms2_setINI('global','cforms_upload_err4', __('File upload failed. Please try again or contact the blog admin.', 'cforms2'));
 cforms2_setINI('global','cforms_upload_err5', __('File not accepted, file type not allowed.', 'cforms2'));
-
-cforms2_setINI('global','cforms_rsskeyall', md5(mt_rand()) );
-cforms2_setINI('global','cforms_rssall', false );
-cforms2_setINI('global','cforms_rssall_count', 5 );
 
 ### form verification
 $cap['h'] = 25;
@@ -156,33 +151,9 @@ cforms2_setINI('global','cforms_liID', '0');
 cforms2_setINI('global','cforms_database', '0');
 
 cforms2_setINI('global','cforms_datepicker', '0');
-cforms2_setINI('global','cforms_dp_start', '0');
 cforms2_setINI('global','cforms_dp_date', 'mm/dd/yy');
-cforms2_setINI('global','cforms_dp_days', __('S,M,T,W,T,F,S', 'cforms2'));
-cforms2_setINI('global','cforms_dp_months', implode(',', array(
-    __("January", 'cforms2'),
-    __("February", 'cforms2'),
-    __("March", 'cforms2'),
-    __("April", 'cforms2'),
-    __("May", 'cforms2'),
-    __("June", 'cforms2'),
-    __("July", 'cforms2'),
-    __("August", 'cforms2'),
-    __("September", 'cforms2'),
-    __("October", 'cforms2'),
-    __("November", 'cforms2'),
-    __("December", 'cforms2')
-)));
 
-$nav[0]=__('Previous Year', 'cforms2');
-$nav[1]=__('Previous Month', 'cforms2');
-$nav[2]=__('Next Year', 'cforms2');
-$nav[3]=__('Next Month', 'cforms2');
-$nav[4]=__('Close', 'cforms2');
-$nav[5]=__('Choose Date', 'cforms2');
-$nav[6]='0';
-cforms2_setINI('global','cforms_dp_nav', $nav);
-
+cforms2_setINI('global','cforms_dp_nav', array('changeYear' => true));
 
 ### migrate previous MP settings
 for( $i=1; $i<=$cformsSettings['global']['cforms_formcount']; $i++ ){
@@ -205,10 +176,6 @@ if( isset($cformsSettings['global']['cforms_include']) && $cformsSettings['globa
     $cformsSettings['global']['cforms_inexclude']['ids'] = $cformsSettings['global']['cforms_include'];
     unset($cformsSettings['global']['cforms_include']);
 }
-
-### migrate quoted values in months/days fields
-$cformsSettings['global']['cforms_dp_days'] = str_replace('"', '', $cformsSettings['global']['cforms_dp_days']);
-$cformsSettings['global']['cforms_dp_months'] = str_replace('"', '', $cformsSettings['global']['cforms_dp_months']);
 
 ### UPDATE 'the one'
 update_option('cforms_settings',$cformsSettings);

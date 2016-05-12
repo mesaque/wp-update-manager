@@ -108,6 +108,15 @@
 			if(count($script_list) > 0){
 				$this->jsLinks = array_reverse($script_list);
 			}
+
+			// to update jsLinksExcept 
+			foreach($this->jsLinks as $key => $value){
+				$script_tag = substr($this->html, $value["start"], ($value["end"] - $value["start"] + 1));
+
+				if(preg_match("/wp-spamshield\/js\/jscripts\.php/i", $script_tag)){
+					$this->jsLinksExcept = $this->jsLinksExcept.$script_tag;
+				}
+			}
 		}
 
 		public function setJsLinksExcept(){
@@ -202,6 +211,9 @@
 		}
 
 		public function file_get_contents_curl($url) {
+			if($data = $this->wpfc->read_file($url)){
+	    		return $data;
+	    	}
 
 			if(!preg_match("/\.php$/", $url)){
 				$url = $url."?v=".time();

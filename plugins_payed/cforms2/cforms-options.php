@@ -21,7 +21,6 @@ global $wpdb;
 
 require_once(plugin_dir_path(__FILE__) . 'lib_functions.php');
 
-### new global settings container, will eventually be the only one!
 $cformsSettings = get_option('cforms_settings');
 
 $plugindir   = dirname(plugin_basename(__FILE__));
@@ -77,40 +76,11 @@ if ( isset($_REQUEST['formpresets']) )
 $field_count = $cformsSettings['form'.$no]['cforms'.$no.'_count_fields'];
 
 
-### check if T-A-F action is required
-$alldisabled=false;
-$allenabled=0;
-if( isset($_REQUEST['addTAF']) || isset($_REQUEST['removeTAF']) )
-{
-
-	$posts = $wpdb->get_results("SELECT ID FROM $wpdb->posts");
-
-	if ( isset($_REQUEST['addTAF']) ){
-
-		foreach($posts as $post) {
-			if ( add_post_meta($post->ID, 'tell-a-friend', '1', true) )
-				$allenabled++;
-		}
-
-	} else if ( isset($_REQUEST['removeTAF']) ){
-        $wpdb->query("DELETE FROM {$wpdb->postmeta} WHERE meta_key = 'tell-a-friend'");
-		$alldisabled=true;
-	}
-
-}
-
-
 ### Update Settings
 if( isset($_REQUEST['SubmitOptions']) || isset($_REQUEST['AddField']) || array_search("X", $_REQUEST) ){
 	require_once(plugin_dir_path(__FILE__) . 'lib_options_sub.php');
 }
 
-
-### new RSS key computed
-if( isset($_REQUEST['cforms_rsskeysnew']) ) {
-	$cformsSettings['form'.$no]['cforms'.$no.'_rsskey'] = md5(mt_rand());
-	update_option('cforms_settings',$cformsSettings);
-}
 
 ### Reset Admin and AutoConf messages
 if( isset($_REQUEST['cforms_resetAdminMsg']) ) {
@@ -192,14 +162,14 @@ if( strlen($fd)<=2 ) {
 		<table class="chgformbox" title="<?php _e('Navigate to your other forms.', 'cforms2') ?>">
 		<tr>
             <td class="chgL">
-            	<label for="switchform" class="bignumber navbar"><?php _e('Navigate to', 'cforms2') ?> </label>
+            	<label for="pickform" class="bignumber navbar"><?php _e('Navigate to', 'cforms2') ?> </label>
                 <?php echo $formlistbox; ?><input type="submit" class="allbuttons go" id="go" name="go" value="<?php _e('Go', 'cforms2');?>"/>
             </td>
             <td class="chgM">
                 <?php
                 for ($i=1; $i<=$FORMCOUNT; $i++) {
                     $j   = ( $i > 1 )?$i:'';
-                    echo '<input id="switchform" title="'.stripslashes($cformsSettings['form'.$j]['cforms'.$j.'_fname']).'" class="allbuttons chgbutton'.(($i <> $noDISP)?'':'hi').'" type="submit" name="switchform" value="'.$i.'"/>';
+                    echo '<input title="'.stripslashes($cformsSettings['form'.$j]['cforms'.$j.'_fname']).'" class="allbuttons chgbutton'.(($i <> $noDISP)?'':'hi').'" type="submit" name="switchform" value="'.$i.'"/>';
                 }
                 ?>
         	</td>
@@ -250,7 +220,6 @@ if( strlen($fd)<=2 ) {
 
                     <?php
 
-                    $isTAF = (int)substr($cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'],0,1);
 					$ti = 1;
 
                     ### pre-check for verification field
@@ -362,22 +331,6 @@ if( strlen($fd)<=2 ) {
 									?>
 								</optgroup>
 
-                                <?php if ( $isTAF<>1 ) $dis=' disabled="disabled" class="disabled"'; else $dis=''; ?>
-								<optgroup label="<?php _e('----- T-A-F form fields ------', 'cforms2'); ?>">
-									<option<?php echo $dis; ?> value="yourname" <?php echo($field_type == 'yourname'?' selected="selected"':''); ?>><?php _e('T-A-F * Your Name', 'cforms2'); ?></option>
-									<option<?php echo $dis; ?> value="youremail" <?php echo($field_type == 'youremail'?' selected="selected"':''); ?>><?php _e('T-A-F * Your Email', 'cforms2'); ?></option>
-									<option<?php echo $dis; ?> value="friendsname" <?php echo($field_type == 'friendsname'?' selected="selected"':''); ?>><?php _e('T-A-F * Friend\'s Name', 'cforms2'); ?></option>
-									<option<?php echo $dis; ?> value="friendsemail" <?php echo($field_type == 'friendsemail'?' selected="selected"':''); ?>><?php _e('T-A-F * Friend\'s Email', 'cforms2'); ?></option>
-								</optgroup>
-
-                                <?php if ( $isTAF<>'2' ) $dis=' disabled="disabled" class="disabled"'; else $dis=''; ?>
-								<optgroup label="<?php _e('--- WP comment form fields ---', 'cforms2'); ?>">
-									<option<?php echo $dis; ?> value="cauthor" <?php echo($field_type == 'cauthor'?' selected="selected"':''); ?>><?php _e('Comment Author', 'cforms2'); ?></option>
-									<option<?php echo $dis; ?> value="email" <?php echo($field_type == 'email'?' selected="selected"':''); ?>><?php _e('Author\'s Email', 'cforms2'); ?></option>
-									<option<?php echo $dis; ?> value="url" <?php echo($field_type == 'url'?' selected="selected"':''); ?>><?php _e('Author\'s URL', 'cforms2'); ?></option>
-									<option<?php echo $dis; ?> value="comment" <?php echo($field_type == 'comment'?' selected="selected"':''); ?>><?php _e('Author\'s Comment', 'cforms2'); ?></option>
-								</optgroup>
-
 								<optgroup label="<?php _e('--- HTML5 form fields ---', 'cforms2'); ?>">
 									<option value="html5color" <?php echo($field_type == 'html5color'?' selected="selected"':''); ?>>html5&nbsp;<?php _e('Color Field', 'cforms2'); ?></option>
 									<option value="html5date" <?php echo($field_type == 'html5date'?' selected="selected"':''); ?>>html5&nbsp;<?php _e('Date Field', 'cforms2'); ?></option>
@@ -405,13 +358,13 @@ if( strlen($fd)<=2 ) {
 
 
                             echo '<input tabindex="'.($ti++).'" class="allchk fieldisemail chkfld" type="checkbox" title="'.__('email required', 'cforms2').'" name="field_'.($i).'_emailcheck"'.($field_emailcheck == '1'?' checked="checked"':'');
-                            if( ! in_array($field_type,array('html5email','textfield','youremail','friendsemail','email')) )
+                            if( ! in_array($field_type,array('html5email','textfield','email')) )
                                 echo ' disabled="disabled"';
 							echo '/>';
 
 
                             echo '<input tabindex="'.($ti++).'" class="allchk fieldclear chkfld" type="checkbox" title="'.__('clear field', 'cforms2').'" name="field_'.($i).'_clear"'.($field_clear == '1'?' checked="checked"':'');
-                            if( ! ((strpos($field_type, 'tml5')!==false) || in_array($field_type,array('pwfield','textarea','textfield','datepicker','yourname','youremail','friendsname','friendsemail','email','author','url','comment'))) )
+                            if( ! ((strpos($field_type, 'tml5')!==false) || in_array($field_type,array('pwfield','textarea','textfield','datepicker'))) )
                                 echo ' disabled="disabled"';
 							echo '/>';
 
@@ -543,7 +496,7 @@ if( strlen($fd)<=2 ) {
 					<td class="obL"><label for="cforms_success"><?php _e('<strong>Success message</strong><br />when form filled out correctly', 'cforms2'); ?></label></td>
 					<td class="obR">
                     	<table><tr>
-						<td><textarea rows="80px" cols="200px" name="cforms_success" id="cforms_success"><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_success'])); ?></textarea></td>
+						<td><textarea name="cforms_success" id="cforms_success"><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_success'])); ?></textarea></td>
                     	</tr></table>
 					</td>
 				</tr>
@@ -552,7 +505,7 @@ if( strlen($fd)<=2 ) {
 					<td class="obL"><label for="cforms_failure"><?php _e('<strong>Failure message</strong><br />when missing fields or wrong field<br />formats (regular expr.)', 'cforms2'); ?></label></td>
 					<td class="obR">
                     	<table><tr>
-						<td><textarea rows="80px" cols="200px" name="cforms_failure" id="cforms_failure" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_failure'])); ?></textarea></td>
+						<td><textarea name="cforms_failure" id="cforms_failure" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_failure'])); ?></textarea></td>
                     	</tr></table>
 					</td>
 				</tr>
@@ -637,10 +590,10 @@ if( strlen($fd)<=2 ) {
 
 				<tr class="ob">
 					<td class="obL"></td>
-					<td class="obR"><input <?php echo ($isTAF==1||$isTAF==2)?'disabled="disabled" class="allchk disabled"':'class="allchk"'; ?> type="checkbox" id="cforms_taftrick" name="cforms_taftrick" <?php if($isTAF=='3') echo "checked=\"checked\""; ?>/><label for="cforms_taftrick"><?php echo sprintf(__('%sExtra variables%s e.g. {Title}', 'cforms2'),'<strong>','</strong>') ?></label> <a class="infobutton" href="#" name="it5"><?php _e('Read note &raquo;', 'cforms2'); ?></a></td>
+					<td class="obR"><input class="allchk" type="checkbox" id="cforms_taftrick" name="cforms_taftrick" <?php if(substr($cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'],0,1)==='3') echo "checked=\"checked\""; ?>/><label for="cforms_taftrick"><?php echo sprintf(__('%sExtra variables%s e.g. {Title}', 'cforms2'),'<strong>','</strong>') ?></label> <a class="infobutton" href="#" name="it5"><?php _e('Read note &raquo;', 'cforms2'); ?></a></td>
 				</tr>
 
-				<tr id="it5" class="infotxt"><td>&nbsp;</td><td class="ex"><?php echo sprintf(__('There are <a href="%s" %s>three additional</a>, <em>predefined variables</em> that belong to the Tell-A-Friend feature but can be enabled here without actually turning on T-A-F.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#tafvariables','onclick="setshow(23)"'); ?> <strong><u><?php _e('Note:', 'cforms2')?></u></strong> <?php _e('This will add two more hidden fields to your form to ensure that all data is available also in AJAX mode.', 'cforms2')?></td></tr>
+				<tr id="it5" class="infotxt"><td>&nbsp;</td><td class="ex"><?php echo sprintf(__('There are <a href="%s" %s>three additional</a>, <em>predefined variables</em> that can be enabled here.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#extravariables','onclick="setshow(23)"'); ?> <strong><u><?php _e('Note:', 'cforms2')?></u></strong> <?php _e('This will add two more hidden fields to your form to ensure that all data is available also in AJAX mode.', 'cforms2')?></td></tr>
 
 				<tr class="ob">
 					<td class="obL"></td>
@@ -665,9 +618,9 @@ if( strlen($fd)<=2 ) {
 						<label for="cforms_startdate"><?php
 						$dt='x';
                         if( strlen($cformsSettings['form'.$no]['cforms'.$no.'_startdate'])>1 ):
-                            $dt = cforms2_make_time(stripslashes($cformsSettings['form'.$no]['cforms'.$no.'_startdate'])) - time();
+                            $dt = human_time_diff(cforms2_make_time(stripslashes($cformsSettings['form'.$no]['cforms'.$no.'_startdate'])));
 							if( $dt>0 ):
-	                                echo __('The form will be available in ', 'cforms2').cforms2_sec2hms($dt);
+	                                echo __('The form will be available in ', 'cforms2').$dt;
 	                            else:
 	                                echo __('The form is available now.', 'cforms2');
 							endif;
@@ -685,9 +638,9 @@ if( strlen($fd)<=2 ) {
                         <input type="text" id="cforms_endtime" name="cforms_endtime" placeholder="<?php _e('HH:MM', 'cforms2'); ?>" value="<?php echo $date[1]; ?>" title="<?php _e('Time entry.', 'cforms2') ?>"/>
 						<label for="cforms_startdate"><?php
                         if( $dt=='x' && strlen($cformsSettings['form'.$no]['cforms'.$no.'_enddate'])>1 ):
-                            $dt = cforms2_make_time(stripslashes($cformsSettings['form'.$no]['cforms'.$no.'_enddate'])) - time();
+                            $dt = human_time_diff(cforms2_make_time(stripslashes($cformsSettings['form'.$no]['cforms'.$no.'_enddate'])));
 							if( $dt>0 ):
-	                                echo __('The form will be available for another ', 'cforms2').cforms2_sec2hms($dt);
+	                                echo __('The form will be available for another ', 'cforms2').$dt;
 	                            else:
 	                                echo __('The form is not available anymore.', 'cforms2');
 							endif;
@@ -699,7 +652,7 @@ if( strlen($fd)<=2 ) {
 				<?php if( $cformsSettings['form'.$no]['cforms'.$no.'_maxentries'] <> '' || $cformsSettings['form'.$no]['cforms'.$no.'_startdate'] <> '' || $cformsSettings['form'.$no]['cforms'.$no.'_enddate'] <> '' ) : ?>
 				<tr class="ob">
 	            	<td class="obL"><label for="cforms_limittxt"><strong><?php _e('Limit text', 'cforms2'); ?></strong></label></td>
-	                <td class="obR"><table><tr><td><textarea rows="80px" cols="200px" name="cforms_limittxt" id="cforms_limittxt"><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_limittxt'])); ?></textarea></td></tr></table></td>
+	                <td class="obR"><table><tr><td><textarea name="cforms_limittxt" id="cforms_limittxt"><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_limittxt'])); ?></textarea></td></tr></table></td>
 				</tr>
 				<?php endif; ?>
 
@@ -724,59 +677,6 @@ if( strlen($fd)<=2 ) {
 				</tr>
 
 				<tr id="it2" class="infotxt"><td>&nbsp;</td><td class="ex"><?php _e('If you enable an alternative <strong>form action</strong> you <u>will loose any cforms application logic</u> (spam security, field validation, DB tracking etc.) in non-ajax mode! This setting is really only for developers that require additional capabilities around forwarding of form data and will turn cforms into a front-end only, a "form builder" so to speak.', 'cforms2') ?></td></tr>
-
-				<tr class="obSEP"><td colspan="2"></td></tr>
-
-				<tr class="ob">
-					<td class="obL"><label for="cforms_rss"><strong><?php _e('RSS feed', 'cforms2'); ?></strong></label></td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_rss" name="cforms_rss" <?php if( $cformsSettings['form'.$no]['cforms'.$no.'_rss'] ) echo "checked=\"checked\""; ?>/> <?php _e('Enable RSS feed to track new submissions', 'cforms2'); ?>  <a class="infobutton" href="#" name="it10"><?php _e('Please read note &raquo;', 'cforms2'); ?></a></td>
-				</tr>
-
-				<tr id="it10" class="infotxt"><td>&nbsp;</td><td class="ex"><?php echo sprintf(__('For the RSS feed to work you must have %sDatabase Tracking%s turned on under <em>Global-Settings</em>! In order to pick &amp; include input fields in your feed your Tracking page must show at least one record for reference.', 'cforms2'),'<strong>','</strong>'); ?></td></tr>
-
-				<?php if( current_user_can('track_cforms') && $cformsSettings['form'.$no]['cforms'.$no.'_rss'] ) : ?>
-				<tr class="ob">
-					<td class="obL"></td>
-					<td class="obR">
-						<?php $j = $cformsSettings['form'.$no]['cforms'.$no.'_rss_count']; $j = (int)abs($j)>20 ? 20:(int)abs($j); ?>
-						<select name="cforms_rsscount" id="cforms_rsscount"><?php
-                            for ($i=1;$i<=20;$i++) {
-                                echo '<option'.(($i==$j)?' selected="selected"':'').'>' .$i. '</option>';
-                            }
-                        ?></select>
-                    	<label for="cforms_rsscount"><?php _e('Number of shown RSS entries', 'cforms2'); ?></label>
-                    </td>
-				</tr>
-
-				<tr class="ob">
-					<td class="obL"></td>
-					<td class="obR">
-						<label for="cforms_rssfields[]"><?php _e('Form fields included in feed:', 'cforms2'); ?></label>
-                    	<select name="cforms_rssfields[]" id="cforms_rssfields"  multiple="multiple">
-                        <?php
-                        	$f = $cformsSettings['form'.$no]['cforms'.$no.'_rss_fields'];
-							$entries = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->cformsdata} WHERE sub_id = (SELECT id FROM {$wpdb->cformssubmissions} WHERE form_id=%s LIMIT 0,1)", $no));
-							foreach($entries as $e) {
-                            	if ($e->field_name <> 'page')
-									echo '<option value="'.$e->field_name.'"'.( array_search($e->field_name,$f)!==false?' selected="selected"':'' ).'>'.stripslashes($e->field_name).'</option>';
-                            }
-                        ?>
-						</select>
-                    </td>
-				</tr>
-
-				<tr class="ob">
-					<td class="obL"><label for="cforms_rsskey"><strong><?php _e('RSS Feed Security Key', 'cforms2'); ?></strong></label></td>
-					<td class="obR">
-						<input name="cforms_rsskey" id="cforms_rsskey" value="<?php echo $cformsSettings['form'.$no]['cforms'.$no.'_rsskey'];  ?>" />
-						<input type="submit" name="cforms_rsskeysnew" id="cforms_rsskeysnew" value="<?php _e('Reset RSS Key', 'cforms2');  ?>" class="allbuttons"  onclick="javascript:document.mainform.action='#anchoremail';"/>
-                    </td>
-				</tr>
-				<tr class="ob">
-					<td class="obL"></td>
-					<td class="obR"><?php _e('The complete RSS URL &raquo;', 'cforms2'); echo '<br />'.network_site_url().'?cformsRSS='.$no.urlencode('$#$').$cformsSettings['form'.$no]['cforms'.$no.'_rsskey']; ?></td>
-				</tr>
-				<?php endif; ?>
 				</table>
 			</div>
 		</fieldset>
@@ -840,7 +740,7 @@ if( strlen($fd)<=2 ) {
 					</td>
 					<td class="obR" style="padding-bottom:0">
                     	<table><tr>
-						<td><textarea rows="80px" cols="200px" name="cforms_header" id="cforms_header" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_header'])); ?></textarea></td>
+						<td><textarea name="cforms_header" id="cforms_header" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_header'])); ?></textarea></td>
 						<td><?php echo sprintf(__('<a href="%s" %s>Variables</a> allowed.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#variables','onclick="setshow(23)"'); ?></td>
                     	</tr></table>
 		 			</td>
@@ -863,7 +763,7 @@ if( strlen($fd)<=2 ) {
 					<td class="obL" style="padding-bottom:0"><label for="cforms_header_html"><?php _e('<strong>Admin HTML message</strong><br />(Header)', 'cforms2') ?></label></td>
 					<td class="obR" style="padding-bottom:0">
                     	<table><tr>
-						<td><textarea rows="80px" cols="200px" name="cforms_header_html" id="cforms_header_html" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_header_html'])); ?></textarea></td>
+						<td><textarea name="cforms_header_html" id="cforms_header_html" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_header_html'])); ?></textarea></td>
 						<td><?php echo sprintf(__('<a href="%s" %s>Variables</a> allowed.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#variables','onclick="setshow(23)"'); ?></td>
                     	</tr></table>
 		 			</td>
@@ -932,7 +832,7 @@ if( strlen($fd)<=2 ) {
 					<td class="obL"><label for="cforms_cmsg"><strong><?php _e('TEXT message', 'cforms2') ?></strong></label></td>
 					<td class="obR">
                     	<table><tr>
-						<td><textarea rows="80px" cols="200px" name="cforms_cmsg" id="cforms_cmsg" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_cmsg'])); ?></textarea></td>
+						<td><textarea name="cforms_cmsg" id="cforms_cmsg" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_cmsg'])); ?></textarea></td>
 						<td><?php echo sprintf(__('<a href="%s" %s>Variables</a> allowed.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#variables','onclick="setshow(23)"'); ?></td>
                     	</tr></table>
 		 			</td>
@@ -945,7 +845,7 @@ if( strlen($fd)<=2 ) {
 					<td class="obL"><label for="cforms_cmsg_html"><strong><?php _e('HTML message', 'cforms2') ?></strong></label></td>
 					<td class="obR">
                     	<table><tr>
-						<td><textarea rows="80px" cols="200px" name="cforms_cmsg_html" id="cforms_cmsg_html" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_cmsg_html'])); ?></textarea></td>
+						<td><textarea name="cforms_cmsg_html" id="cforms_cmsg_html" ><?php echo stripslashes(htmlspecialchars($cformsSettings['form'.$no]['cforms'.$no.'_cmsg_html'])); ?></textarea></td>
 						<td><?php echo sprintf(__('<a href="%s" %s>Variables</a> allowed.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#variables','onclick="setshow(23)"'); ?></td>
                     	</tr></table>
 		 			</td>
@@ -1041,82 +941,6 @@ if( strlen($fd)<=2 ) {
 		</fieldset>
 
 
-		<fieldset class="cformsoptions" id="tellafriend">
-			<div class="cflegend op-closed" id="p6" title="<?php _e('Expand/Collapse', 'cforms2') ?>">
-            	<a class="helptop" href="#top"><?php _e('top', 'cforms2'); ?></a><div class="blindplus"></div><?php _e('Tell-A-Friend Form Support', 'cforms2')?>
-            </div>
-
-			<div class="cf-content" id="o6">
-				<?php
-					if ( $allenabled <> false )
-						echo '<div id="tafmessage" class="updated fade"><p>'.$allenabled.' '. __('posts and pages processed and tell-a-friend <strong>enabled</strong>.', 'cforms2'). ' </p></div>';
-					else if ( $alldisabled )
-						echo '<div id="tafmessage" class="updated fade"><p>'. __('All posts &amp; pages processed and tell-a-friend <strong>disabled</strong>.', 'cforms2'). ' </p></div>';
-				?>
-
-                <p class="ex"><?php echo sprintf(__('BEFORE turning on this feature, please see the Help section for <a href="%s" %s>more details.</a>', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#taf','onclick="setshow(19)"'); ?></p>
-				<p><?php _e('If enabled, new field types will be made available to cover tell-a-friend requirements.', 'cforms2'); ?></p>
-
-				<table class="form-table">
-				<tr class="ob">
-					<td class="obL">&nbsp;</td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_tellafriend" name="cforms_tellafriend" <?php if( $isTAF==1 ) echo "checked=\"checked\""; ?>/><label for="cforms_tellafriend"><strong><?php _e('Enable Tell-A-Friend', 'cforms2') ?></strong></label></td>
-				</tr>
-
-				<?php if( $isTAF==1 ) : ?>
-				<tr class="ob">
-					<td class="obL">&nbsp;</td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_tafCC" name="cforms_tafCC" <?php if( $cformsSettings['form'.$no]['cforms'.$no.'_tafCC']=='1' ) echo "checked=\"checked\""; ?>/><label for="cforms_tafCC"><strong><?php _e('CC: User submitting the form', 'cforms2') ?></strong></label></td>
-				</tr>
-				<tr class="ob">
-					<td class="obL">&nbsp;</td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_tafdefault" name="cforms_tafdefault" <?php if( substr($cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'],1,1)=='1' ) echo "checked=\"checked\""; ?>/><label for="cforms_tafdefault"><strong><?php _e('T-A-F enable <strong>new posts/pages</strong> by default', 'cforms2') ?></strong></label></td>
-				</tr>
-
-				<tr class="ob space20">
-					<td class="obL"><label for="migrate"><?php _e('<strong>Batch T-A-F dis-/enable</strong><br />all your previous posts.', 'cforms2') ?></label></td>
-					<td class="obR">
-						<input type="submit" title="<?php _e('This will add a T-A-F custom field per post/page.', 'cforms2') ?>" name="addTAF" class="allbuttons" style="width:150px;" value="<?php _e('Enable all', 'cforms2') ?>" onclick="document.mainform.action='#tellafriend'; return confirm('<?php _e('Do you really want to enable all previous posts and pages for T-A-F?', 'cforms2') ?>');"/>
-						<input type="submit" title="<?php _e('This will remove the T-A-F custom field on all posts/pages.', 'cforms2') ?>" name="removeTAF" class="allbuttons" style="width:150px;" value="<?php _e('Disable all', 'cforms2') ?>" onclick="document.mainform.action='#tellafriend'; return confirm('<?php _e('Do you really want to disable all previous posts and pages for T-A-F?', 'cforms2') ?>');"/>
-						<span><a class="infobutton" href="#" name="it9"><?php _e('Please read note &raquo;', 'cforms2'); ?></a></span>
-		 			</td>
-				</tr>
-				<tr id="it9" class="infotxt"><td>&nbsp;</td><td class="ex"><?php _e('You will find a <strong>cforms Tell-A-Friend</strong> checkbox on your <strong>admin/edit page</strong> (typically under "Post/Author")! <br /><u>Check it</u> if you want to have the form to appear on the given post or page.', 'cforms2');?></td></tr>
-				<?php endif; ?>
-
-				</table>
-
-			</div>
-		</fieldset>
-
-
-		<fieldset class="cformsoptions" id="commentrep">
-			<div class="cflegend op-closed" id="p7" title="<?php _e('Expand/Collapse', 'cforms2') ?>">
-            	<a class="helptop" href="#top"><?php _e('top', 'cforms2'); ?></a><div class="blindplus"></div><?php _e('WP Comment Feature', 'cforms2')?>
-            </div>
-
-			<div class="cf-content" id="o7">
-
-				<p><?php _e('cforms can be used to replace your <em>default Wordpress comment form</em> (on posts &amp; pages), allowing your readers to either <strong>comment on the post</strong> or <strong>alternatively send the post author a note</strong>!', 'cforms2') ?></p>
-				<p><?php echo sprintf(__('There will be additional, comment specific <em>input field types</em> available with this feature turned on. For an easy start, use the <em>WP comment form preset</em>. <a href="%s" %s>Configuration details.</a>', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#commentrep','onclick="setshow(19)"'); ?></p>
-
-				<table class="form-table">
-				<tr class="ob">
-					<td class="obL"><label for="cforms_commentrep"><strong><?php _e('WP comment form', 'cforms2') ?></strong></label></td>
-					<td class="obR"><input class="allchk" type="checkbox" id="cforms_commentrep" name="cforms_commentrep" <?php if( $isTAF==2 ) echo "checked=\"checked\""; ?>/><label for="cforms_commentrep"><?php _e('Enable this form to optionally (user determined) act as a WP comment form', 'cforms2') ?></label></td>
-				</tr>
-
-	            <?php if( $isTAF==2 ) : ?>
-	                <tr><td>&nbsp;</td><td><a class="infobutton" href="#" name="it6"><?php _e('<em>Tell a friend</em> or <em>WP comment</em>? &raquo;', 'cforms2'); ?></a></td></tr>
-					<tr id="it6" class="infotxt"><td>&nbsp;</td><td class="ex"><?php echo sprintf(__('This feature and T-A-F (above) are mutually exclusive. If you need both features, please create a new form for T-A-F.<br />Again, see the <a href="%s" %s>help section</a> on proper use.', 'cforms2'),'?page='. $plugindir.'/cforms-help.php#commentrep','onclick="setshow(19)"'); ?></td></tr>
-	            <?php endif; ?>
-
-				</table>
-
-			</div>
-		</fieldset>
-
-
 		<fieldset class="cformsoptions" id="readnotify">
 			<div class="cflegend op-closed" id="p8" title="<?php _e('Expand/Collapse', 'cforms2') ?>">
             	<a class="helptop" href="#top"><?php _e('top', 'cforms2'); ?></a><div class="blindplus"></div><?php _e('3rd Party Read-Notification Support', 'cforms2')?>
@@ -1138,8 +962,8 @@ if( strlen($fd)<=2 ) {
 			<input id="cfbar-addbutton" class="allbuttons addbutton" type="submit" name="addbutton" value=""/>
 			<input id="cfbar-dupbutton" class="allbuttons dupbutton" type="submit" name="dupbutton" value=""/>
 			<input id="cfbar-delbutton" class="allbuttons deleteall" type="submit" name="delbutton" value=""/>
-			<input id="preset" type="button" class="jqModalInstall allbuttons" name="<?php echo plugin_dir_url(__FILE__); ?>include/" value=""/>
-			<input id="backup" type="button" class="jqModalBackup allbuttons" name="backup"  value=""/>
+			<input id="preset" type="button" class="jqModalInstall allbuttons" name="<?php echo plugin_dir_url(__FILE__); ?>include/" value=" "/>
+			<input id="backup" type="button" class="jqModalBackup allbuttons" name="backup"  value=" "/>
 			<input id="cfbar-SubmitOptions" type="submit" name="SubmitOptions" class="allbuttons updbutton formupd" value="" />
 	    </div>
 
@@ -1157,13 +981,13 @@ function cforms2_insert_modal(){
 		<div class="cf_ed_header"><?php _e('Input Field Settings', 'cforms2'); ?></div>
 		<div class="cf_ed_main">
 			<div id="cf_target"></div>
-			<div class="controls"><a href="#" id="ok" class="jqmClose dashicons dashicons-yes" title="<?php _e('OK', 'cforms2') ?>"></a><a href="#" id="cancel" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></div>
+			<div class="controls"><a href="#" id="ok" class="jqmClose dashicons dashicons-yes" title="<?php _e('OK', 'cforms2') ?>"></a><a href="#" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></div>
 		</div>
 	</div>
 	<div class="jqmWindow" id="cf_installbox">
 		<div class="cf_ed_header"><?php _e('cforms Out-Of-The-Box Form Repository', 'cforms2'); ?></div>
 		<div class="cf_ed_main">
-			<form action="" name="installpreset" method="post">
+			<form name="installpreset" method="post">
 				<div id="cf_installtarget"></div>
 				<div class="controls"><a href="#" id="okInstall" class="jqmClose dashicons dashicons-yes" title="<?php _e('OK', 'cforms2') ?>"></a><a href="#" id="cancelInstall" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></div>
 				<input type="hidden" name="noSub" value="<?php echo $noDISP; ?>"/>
@@ -1173,7 +997,7 @@ function cforms2_insert_modal(){
 	<div class="jqmWindow" id="cf_backupbox">
 		<div class="cf_ed_header"><?php _e('Backup &amp; Restore Form Settings', 'cforms2'); ?></div>
 		<div class="cf_ed_main_backup">
-			<form enctype="multipart/form-data" action="" name="backupform" method="post">
+			<form enctype="multipart/form-data" name="backupform" method="post">
 				<div class="controls">
 
 	                <input type="submit" id="savecformsdata" name="savecformsdata" class="allbuttons backupbutton"  value="<?php _e('Backup current form settings', 'cforms2'); ?>" onclick="javascript:jQuery('#cf_backupbox').jqmHide();" /><br />
@@ -1181,7 +1005,7 @@ function cforms2_insert_modal(){
 	                <input type="file" id="upload" name="importall" size="25" />
 	                <input type="submit" name="uploadcformsdata" class="allbuttons restorebutton" value="<?php _e('Restore from file', 'cforms2'); ?>" onclick="javascript:jQuery('#cf_backupbox').jqmHide();" />
 
-                    <p class="cancel"><a href="#" id="cancel" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></p>
+                    <p class="cancel"><a href="#" class="jqmClose dashicons dashicons-no-alt" title="<?php _e('Cancel', 'cforms2') ?>"></a></p>
 
         	    </div>
 				<input type="hidden" name="noSub" value="<?php echo $noDISP; ?>"/>

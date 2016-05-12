@@ -23,10 +23,6 @@
 	$cformsSettings['global']['cforms_formcount'] = (string)($FORMCOUNT);
 
 	### new settings container
-	$cformsSettings['form'.$no]['cforms'.$no.'_rsskey'] = md5(mt_rand());
-	$cformsSettings['form'.$no]['cforms'.$no.'_rss'] = false;
-	$cformsSettings['form'.$no]['cforms'.$no.'_rss_count'] = 5;
-
 	$cformsSettings['form'.$no]['cforms'.$no.'_dontclear'] = false;
 
 	$cformsSettings['form'.$no]['cforms'.$no.'_count_fields'] = '5';
@@ -78,7 +74,7 @@
 	$cformsSettings['form'.$no]['cforms'.$no.'_upload_size'] = '1024';
 
 	$cformsSettings['form'.$no]['cforms'.$no.'_tracking'] = '';
-	$cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'] = '00';
+	$cformsSettings['form'.$no]['cforms'.$no.'_tellafriend'] = '0';
 	$cformsSettings['form'.$no]['cforms'.$no.'_dashboard'] = '0';
 	$cformsSettings['form'.$no]['cforms'.$no.'_maxentries'] = '';
 

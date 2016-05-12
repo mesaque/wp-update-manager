@@ -2,7 +2,7 @@
 
 # Compress JPEG & PNG images for WordPress
 
-Make your website faster by compressing your JPEG and PNG images.
+Make your website faster by optimizing your JPEG and PNG images.
 
 This plugin automatically optimizes your images by integrating with the
 popular image compression services TinyJPG and TinyPNG. You can download the
@@ -21,7 +21,6 @@ Got questions or feedback? Let us know! Contact us at support@tinypng.com.
 * Composer (https://getcomposer.org/download/).
 * PhantomJS 2.1 or greater (http://phantomjs.org).
 * MySQL client and admin tools.
-* Java runtime.
 
 ### Running the plugin in WordPress
 1. Run `bin/run-wordpress <version>`. E.g. `bin/run-wordpress 41`.
@@ -31,7 +30,7 @@ Got questions or feedback? Let us know! Contact us at support@tinypng.com.
 1. Run `bin/unit-tests`.
 
 ### Running the integration tests
-1. Start PhantomJS server: `phantomjs --webdriver=127.0.0.1:8910`. Tested with version 2.1.1.
+1. Start PhantomJS server: `phantomjs --wd`. Tested with version 2.1.1.
 2. Run `bin/integration-tests $version [$to_version]` (When $to_version is
 added, all versions between $version and $to_version are tested). E.g.
 `bin/integration-tests 41` or `bin/integration-tests 40 42`.
@@ -44,7 +43,7 @@ See https://translate.wordpress.org/projects/wp-plugins/tiny-compress-images.
 
 ## License
 
-Copyright (C) 2015 Voormedia B.V.
+Copyright (C) 2015-2016 Voormedia B.V.
 
 This program is free software; you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by

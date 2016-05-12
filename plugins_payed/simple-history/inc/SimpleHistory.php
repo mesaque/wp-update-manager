@@ -112,7 +112,7 @@ class SimpleHistory {
 		add_filter( 'gettext', array( $this, "filter_gettext_storeLatestTranslations" ), 10, 3 );
 
 		if ( is_admin() ) {
-			
+
 			$this->add_admin_actions();
 
 		}
@@ -172,7 +172,7 @@ class SimpleHistory {
 
 		add_action( 'admin_head', array( $this, "onAdminHead" ) );
 		add_action( 'admin_footer', array( $this, "onAdminFooter" ) );
-	
+
 		add_action( 'simple_history/history_page/before_gui', array( $this, "output_quick_stats" ) );
 		add_action( 'simple_history/dashboard/before_gui', array( $this, "output_quick_stats" ) );
 
@@ -200,12 +200,17 @@ class SimpleHistory {
 
 	function filter_gettext_storeLatestTranslations( $translation, $text, $domain ) {
 
+		// Check that translation is a string or integer, i.ex. the valid values for an array key
+		if ( ! is_string( $translation ) || ! is_integer( $translation ) ) {
+			return $translation;
+		}
+
 		$array_max_size = 5;
 
 		// Keep a listing of the n latest translation
 		// when SimpleLogger->log() is called from anywhere we can then search for the
 		// translated string among our n latest things and find it there, if it's translated
-		//global $sh_latest_translations;
+		// global $sh_latest_translations;
 		$sh_latest_translations = $this->gettextLatestTranslations;
 
 		$sh_latest_translations[$translation] = array(
@@ -847,7 +852,7 @@ class SimpleHistory {
 			}
 
 			$loggerInstance->messages = $arr_messages_by_message_key;
-			
+
 			// Add logger to array of loggers
 			$this->instantiatedLoggers[$loggerInstance->slug] = array(
 				"name" => $loggerInfo["name"],
@@ -1140,6 +1145,14 @@ class SimpleHistory {
 			}
 			// end add timeago
 
+			// Load Select2 locale
+			$locale_url_path = SIMPLE_HISTORY_DIR_URL . 'js/select2/select2_locale_%s.js';
+			$locale_dir_path = SIMPLE_HISTORY_PATH . 'js/select2/select2_locale_%s.js';
+			if ( file_exists( sprintf( $locale_dir_path, $locale ) ) ) {
+				wp_enqueue_script( 'select2-locale', sprintf( $locale_url_path, $locale ), array("jquery"), '3.5.1', true );
+			}
+
+
 			/**
 			 * Fires when the admin scripts have been enqueued.
 			 * Only fires on any of the pages where Simple History is used
@@ -1354,7 +1367,7 @@ class SimpleHistory {
 		if ( 4 == intval( $db_version ) ) {
 
 			if ( ! $this->does_database_have_data() ) {
-				
+
 				// not ok, decrease db number so installs will run again and hopefully fix things
 				$db_version = 0;
 
@@ -1938,7 +1951,7 @@ Because Simple History was just recently installed, this feed does not contain m
 		}
 
 		$days = $this->get_clear_history_interval();
-		
+
 		// Never clear log if days = 0
 		if ( 0 == $days ) {
 			return;
@@ -2587,7 +2600,7 @@ Because Simple History was just recently installed, this feed does not contain m
 		if ( "sql" == $format ) {
 
 			$str_return = "(";
-			
+
 			if ( sizeof( $arr_loggers_user_can_view ) ) {
 
 				foreach ( $arr_loggers_user_can_view as $one_logger ) {
@@ -2600,14 +2613,14 @@ Because Simple History was just recently installed, this feed does not contain m
 				}
 
 				$str_return = rtrim( $str_return, " ," );
-			
+
 			} else {
-			
+
 				// user was not allowed to read any loggers, return in (NULL) to return nothing
 				$str_return .= 'NULL';
-			
+
 			}
-			
+
 			$str_return .= ")";
 
 			return $str_return;
@@ -3086,4 +3099,3 @@ function simple_history_text_diff( $left_string, $right_string, $args = null ) {
 
 	return $r;
 }
-

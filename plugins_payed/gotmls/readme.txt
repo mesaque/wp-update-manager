@@ -5,10 +5,10 @@ Author URI: http://wordpress.ieonly.com/category/my-plugins/anti-malware/
 Contributors: scheeeli, gotmls
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QZHD8QHZ2E7PE
 Tags: security, firewall, anti-malware, scanner, automatic, repair, remove, malware, virus, threat, hacked, malicious, infection, timthumb, exploit, block, brute-force, wp-login, patch, antimalware, revslider, Revolution Slider
-Version: 4.15.49
-Stable tag: 4.15.49
+Version: 4.16.17
+Stable tag: 4.16.17
 Requires at least: 3.3
-Tested up to: 4.4
+Tested up to: 4.5.2
 
 This Anti-Malware scanner searches for Malware, Viruses, and other security threats and vulnerabilities on your server and it helps you fix them.
 
@@ -27,7 +27,7 @@ This Anti-Malware scanner searches for Malware, Viruses, and other security thre
 * Check the integrity of your WordPress Core files.
 * Automatically download new Definition Updates when running a Complete Scan.
 
-Updated December 11th
+Updated May 10th
 
 Register this plugin at [GOTMLS.NET](http://gotmls.net/) and get access to new definitions of "Known Threats" and added features like Automatic Removal, plus patches for specific security vulnerabilities like old versions of timthumb. Updated definition files can be downloaded automatically within the admin once your Key is registered. Otherwise, this plugin just scans for "Potential Threats" and leaves it up to you to identify and remove the malicious ones.
 
@@ -92,6 +92,11 @@ sucuri.net caches their scan results and will not refresh the scan until you cli
 5. The Quarantine showing threats that have been fix already.
 
 == Changelog ==
+
+= 4.16.17 =
+* Removed Menu Item Placement Options because the add_object_page function was deprecated in WP 4.5.
+* Added firewall options for better compatibility with WP Firewall 2.
+* Fixed an XSS vulnerability in the debug output of the nonce token.
 
 = 4.15.49 =
 * Moved the Firewall Options to it's own page linked to from the admin menu.
@@ -380,6 +385,9 @@ sucuri.net caches their scan results and will not refresh the scan until you cli
 * First BETA versions available for WordPress.
 
 == Upgrade Notice ==
+
+= 4.16.17 =
+Removed Menu Item Placement Options that were deprecated in WP 4.5, Added firewall options for better compatibility with WP Firewall 2, and fixed an XSS vulnerability in the debug output of the nonce token.
 
 = 4.15.49 =
 Moved the Firewall Options to it's own page and moved the Quick Scan to the top of the Scan Settings page.

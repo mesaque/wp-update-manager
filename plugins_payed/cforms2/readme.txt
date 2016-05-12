@@ -1,14 +1,14 @@
 === cformsII - contact form ===
 Contributors: bgermann, olivers, cbacchini, codifex
 Donate link: https://www.betterplace.org/organisations/tatkraeftig/donations/new
-Tags: contact form, ajax, contact, form, input, comments, post, sidebar, spam, admin
+Tags: contact form, ajax, contact, form, input, post, sidebar, spam, admin
 Requires at least: 3.9
-Tested up to: 4.4
+Tested up to: 4.5
 Stable tag: trunk
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0
 
-cformsII is the most customizable, flexible & powerful ajax supporting contact form plugin (& comment form)!
+cformsII is the most customizable, flexible & powerful ajax supporting contact form plugin!
 
 == Description ==
 
@@ -34,8 +34,7 @@ Simple CAPTCHA, please install the current version and activate the plugin.
 [Contact Form DB](https://wordpress.org/plugins/contact-form-7-to-database-extension)
 has support for storing cformsII's submission data and exporting in more
 formats than cformsII does. Therefore cformsII's database tracking will be
-removed in the long run. RSS support, which depends on database tracking,
-will be removed in version 14.12.
+removed in the long run.
 
 = Credits =
 
@@ -153,16 +152,9 @@ Just search for widgets with your browser's search.
 
 Please use [GitHub pull requests](https://github.com/bgermann/cforms2/pulls).
 
-= Where is the field type "Select: Email/Comment"? =
+= Where are comment and Tell-a-Friend fields? =
 
-That field type was removed in 14.11.3 as it contained a bug since version
-14.6.3 that noone mentioned. Most probably noone uses it anymore.
-
-
-= Where is the field type "Extra comment notification"? =
-
-That field type was removed in 14.11.3 as it contained a bug since version
-14.6.3 that noone mentioned. Most probably noone uses it anymore.
+These features were remove with version 14.12.
 
 
 == Localization ==
@@ -193,7 +185,6 @@ The original author who developed cforms until 2012 also has a
 
 Some things are to be done:
 
-* remove RSS support
 * replace jqModal with jquery-ui-dialog
 * filter user input
 * grunt build process similar to Wordpress core
@@ -202,6 +193,9 @@ Some things are to be done:
 
 
 == Upgrade Notice ==
+
+= 14.12 =
+RSS support is removed. If you depend on it, please try Contact Form DB's RSS support. WordPress comment support and Tell-a-Friend support is removed, too.
 
 = 14.11 =
 CAPTCHA support is handled by the new plugin Really Simple CAPTCHA for cformsII. If you depend on CAPTCHAs, please install this plugin. Additionally, if you use my_cforms_ajax_filter(), you get a new data structure there.
@@ -241,6 +235,14 @@ GPL compliance!
 
 
 == Changelog ==
+
+= 14.12 =
+
+* enhanced: make all date picker options configurable (breaks old datepicker settings)
+* enhanced: remove role capabilities on uninstall
+* other:    remove RSS support
+* other:    remove Tell-a-Friend support
+* other:    remove WordPress comment support
 
 = 14.11.4 =
 

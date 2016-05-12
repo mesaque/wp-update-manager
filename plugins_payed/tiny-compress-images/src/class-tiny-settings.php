@@ -1,7 +1,7 @@
 <?php
 /*
 * Tiny Compress Images - WordPress plugin.
-* Copyright (C) 2015 Voormedia B.V.
+* Copyright (C) 2015-2016 Voormedia B.V.
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the Free
@@ -55,7 +55,7 @@ class Tiny_Settings extends Tiny_WP_Base {
         }
 
         $section = self::get_prefixed_name('settings');
-        add_settings_section($section, __('PNG and JPEG compression', 'tiny-compress-images'), $this->get_method('render_section'), 'media');
+        add_settings_section($section, __('PNG and JPEG optimization', 'tiny-compress-images'), $this->get_method('render_section'), 'media');
 
         $field = self::get_prefixed_name('api_key');
         register_setting('media', $field);
@@ -75,7 +75,7 @@ class Tiny_Settings extends Tiny_WP_Base {
 
         $field = self::get_prefixed_name('savings');
         register_setting('media', $field);
-        add_settings_field($field, __('Savings'), $this->get_method('render_pending_savings'), 'media', $section);
+        add_settings_field($field, __('Savings', 'tiny-compress-images'), $this->get_method('render_pending_savings'), 'media', $section);
 
         $field = self::get_prefixed_name('preserve_data');
         register_setting('media', $field);
@@ -268,7 +268,7 @@ class Tiny_Settings extends Tiny_WP_Base {
         $id = self::get_prefixed_name("sizes_$size");
         $name = self::get_prefixed_name("sizes[$size]");
         $checked = ( $option['tinify'] ? ' checked="checked"' : '' );
-        if ($size === Tiny_Metadata::ORIGINAL) {
+        if (Tiny_Metadata::is_original($size)) {
             $label = esc_html__('original', 'tiny-compress-images') . ' (' . esc_html__('overwritten by compressed image', 'tiny-compress-images') . ')';
         } else {
             $label = $size . ' - ' . $option['width'] . 'x' . $option['height'];
@@ -288,8 +288,7 @@ class Tiny_Settings extends Tiny_WP_Base {
             esc_html_e('With these settings no images will be compressed.', 'tiny-compress-images');
         } else {
             $free_images_per_month = floor( Tiny_Config::MONTHLY_FREE_COMPRESSIONS / $active_image_sizes_count );
-            printf(__('With these settings you can compress <strong> at least %s images </strong> for free each month.',
-                      'tiny-compress-images'), $free_images_per_month);
+            printf(__('With these settings you can compress <strong> at least %s images </strong> for free each month.', 'tiny-compress-images'), $free_images_per_month);
         }
         echo '</p>';
     }
@@ -298,7 +297,7 @@ class Tiny_Settings extends Tiny_WP_Base {
         global $wpdb;
 
         $total_savings = 0;
-        $result = $wpdb->get_results("SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' ORDER BY ID DESC", ARRAY_A);
+        $result = $wpdb->get_results("SELECT ID FROM $wpdb->posts WHERE post_type = 'attachment' AND (post_mime_type = 'image/jpeg' OR post_mime_type = 'image/png') ORDER BY ID DESC", ARRAY_A);
         for ($i = 0; $i < sizeof($result); $i++) {
             $tiny_metadata = new Tiny_Metadata($result[$i]["ID"]);
             $savings = $tiny_metadata->get_savings();
@@ -323,7 +322,7 @@ class Tiny_Settings extends Tiny_WP_Base {
         $id = self::get_prefixed_name("resize_original_enabled");
         $name = self::get_prefixed_name("resize_original[enabled]");
         $checked = ( $this->get_resize_enabled() ? ' checked="checked"' : '' );
-        $label = esc_html__('Resize and compress the orginal image', 'tiny-compress-images');
+        $label = esc_html__('Resize and compress the original image', 'tiny-compress-images');
 
         echo '<p class="tiny-resize-available">';
         echo '<input  type="checkbox" id="' . $id . '" name="' . $name . '" value="on" '. $checked . '/>';
@@ -343,11 +342,13 @@ class Tiny_Settings extends Tiny_WP_Base {
         echo '</p>';
 
         echo '<br>';
-        $this->render_preserve_input("copyright", 'Preserve copyright information in the original image (JPEG only)');
+        $this->render_preserve_input("creation", 'Preserve creation date and time in the original image (JPEG only)') .'<br>';
+        $this->render_preserve_input("copyright", 'Preserve copyright information in the original image') .'<br>';
+        $this->render_preserve_input("location", 'Preserve GPS location in the original image (JPEG only)') .'<br>';
     }
 
     public function render_preserve_input($name, $description) {
-        echo '<p>';
+        echo '<p class="tiny-preserve">';
         $id = sprintf(self::get_prefixed_name('preserve_data_%s'), $name);
         $field = sprintf(self::get_prefixed_name('preserve_data[%s]'), $name);
         $checked = ( $this->get_preserve_enabled($name) ? ' checked="checked"' : '' );

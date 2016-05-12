@@ -16,7 +16,21 @@ abstract class IntegrationTestCase extends PHPUnit_Framework_TestCase {
         self::$driver = RemoteWebDriver::createBySessionId($GLOBALS['global_session_id'], $GLOBALS['global_webdriver_host']);
     }
 
-    protected function upload_image($path) {
+    protected function has_postbox_container() {
+        return wordpress_version() >= 35;
+    }
+
+    protected function postbox_dimension_selector() {
+        $version = wordpress_version();
+        if ($version < 37)
+            return 'div.misc-pub-section:nth-child(5)';
+        elseif ($version == 37)
+            return 'div.misc-pub-section:nth-child(6)';
+        else
+            return 'div.misc-pub-dimensions';
+    }
+
+    protected function upload_media($path) {
         self::$driver->get(wordpress('/wp-admin/media-new.php?browser-uploader&flash=0'));
         $links = self::$driver->findElements(WebDriverBy::xpath('//a[text()="browser uploader"]'));
         if (count($links) > 0) {
@@ -30,11 +44,7 @@ abstract class IntegrationTestCase extends PHPUnit_Framework_TestCase {
         $file_input->setFileDetector(new UselessFileDetector());
         $file_input->sendKeys($path);
         self::$driver->findElement(WebDriverBy::xpath('//input[@value="Upload"]'))->click();
-        $path_elements = explode('/', $path);
-        $file_name = array_pop($path_elements);
-        $image_elements = explode('.', $file_name);
-        $image_name = $image_elements[0];
-        self::$driver->wait(2)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::xpath('//img[contains(@src, "' . $image_name . '")]')));
+        self::$driver->wait(2)->until(WebDriverExpectedCondition::presenceOfElementLocated(WebDriverBy::xpath('//h1[contains(text(),"Media Library")]|//h2[contains(text(),"Media Library")]')));
     }
 
     protected function set_api_key($api_key) {
@@ -94,7 +104,28 @@ abstract class IntegrationTestCase extends PHPUnit_Framework_TestCase {
         self::$driver->findElement(WebDriverBy::tagName('form'))->submit();
     }
 
-    protected function view_edit_image($image_title = 'input-large') {
+    protected function enable_preserve($keys) {
+        $url = wordpress('/wp-admin/options-media.php');
+        if (self::$driver->getCurrentUrl() != $url) {
+            self::$driver->get($url);
+        }
+        $elements = self::$driver->findElements(WebDriverBy::xpath('//input[starts-with(@id, "tinypng_preserve_data")]'));
+        foreach($elements as $element) {
+            $key = str_replace('tinypng_preserve_data_', '', $element->getAttribute('id'));
+            if (in_array($key, $keys)) {
+                if (!$element->getAttribute('checked')) {
+                    $element->click();
+                }
+            } else {
+                if ($element->getAttribute('checked')) {
+                    $element->click();
+                }
+            }
+        }
+        self::$driver->findElement(WebDriverBy::tagName('form'))->submit();
+    }
+
+    protected function view_edit_image($image_title = 'input-example') {
         $url = wordpress('/wp-admin/upload.php');
         if (self::$driver->getCurrentUrl() != $url) {
             self::$driver->get($url);

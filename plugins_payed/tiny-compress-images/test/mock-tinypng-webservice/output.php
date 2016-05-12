@@ -10,27 +10,36 @@ if (preg_match('#output/.+[.](png|jpg)$#', $_SERVER['REQUEST_URI'], $match)) {
 } else {
     $file = null;
 }
+$headers = [];
 
 $api_key = get_api_key();
 if (!is_null($api_key)) {
     $data = get_json_body();
-    if (is_null($data) || $api_key != 'JPG123') {
-        mock_invalid_response();
-        ob_end_flush();
-        exit();
-    }
-
     $resize = $data->resize;
     if ($resize->method) {
         $file = "output-resized.$ext";
-        header("Image-Width: {$resize->width}");
-        header("Image-Height: {$resize->height}");
+        $headers["Image-Width"] = $resize->width;
+        $headers["Image-Height"] = $resize->height;
     }
 }
 
-if ($file && file_exists($file)) {
+if (strpos($api_key, 'GATEWAYTIMEOUT') !== false) {
+    echo mock_service_unavailable_response();
+} else if (strpos($api_key, 'INVALID') !== false) {
+    header('HTTP/1.1 400 Bad Request');
+    header("Content-Type: application/json; charset=utf-8");
+
+    $response = array(
+        "error" => "JSON validation error",
+        "message" => "Metadata key 'author' not supported"
+    );
+    echo json_encode($response);
+} else if ($file && file_exists($file)) {
     header("Content-Type: $mime");
     header('Content-Disposition: attachment');
+    foreach ($headers as $name => $value) {
+        header("$name: $value");
+    }
     readfile($file);
 } else {
     header("HTTP/1.1 404 Not Found");

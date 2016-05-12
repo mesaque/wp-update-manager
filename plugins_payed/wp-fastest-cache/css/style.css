@@ -43,6 +43,7 @@ div.questionCon.qsubmit{
     text-align: right;
     width: 130px;
     font-weight: normal !important;
+    background: none !important;
 }
 
 .tabGroup div.inputCon{
@@ -76,6 +77,7 @@ div.questionCon.qsubmit{
     /* Set the background color to default gray (non-selected tab) */
     background-color:#ddd;
     color: black;
+    box-shadow: none !important;
 }
   
 /* Focused tabs need to be highlighted as such */
@@ -111,11 +113,11 @@ div.questionCon.qsubmit{
     display: block;
 }
 /* for lef panel */
-#toplevel_page_WpFastestCacheOptions img{
+#toplevel_page_wpfastestcacheoptions img{
     padding: 0 !important;
     margin-left: 5px !important;
 }
-#toplevel_page_WpFastestCacheOptions div.wp-menu-name{
+#toplevel_page_wpfastestcacheoptions div.wp-menu-name{
     margin-left: 0 !important;
 }
 .question:after {

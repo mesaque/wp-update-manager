@@ -8,7 +8,7 @@ Author URI: http://wordpress.ieonly.com/category/my-plugins/anti-malware/
 Contributors: scheeeli, gotmls
 Donate link: https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=QZHD8QHZ2E7PE
 Description: This Anti-Virus/Anti-Malware plugin searches for Malware and other Virus like threats and vulnerabilities on your server and helps you remove them. It's always growing and changing to adapt to new threats so let me know if it's not working for you.
-Version: 4.15.49
+Version: 4.16.17
 */
 if (isset($_SERVER["DOCUMENT_ROOT"]) && ($SCRIPT_FILE = str_replace($_SERVER["DOCUMENT_ROOT"], "", isset($_SERVER["SCRIPT_FILENAME"])?$_SERVER["SCRIPT_FILENAME"]:isset($_SERVER["SCRIPT_NAME"])?$_SERVER["SCRIPT_NAME"]:"")) && strlen($SCRIPT_FILE) > strlen("/".basename(__FILE__)) && substr(__FILE__, -1 * strlen($SCRIPT_FILE)) == substr($SCRIPT_FILE, -1 * strlen(__FILE__)))
 	include(dirname(__FILE__)."/safe-load/index.php");
@@ -18,7 +18,7 @@ else
  *           /  /\     GOTMLS Main Plugin File
  *          /  /:/     @package GOTMLS
  *         /__/::\
- Copyright \__\/\:\__  © 2012-2015 Eli Scheetz (email: eli@gotmls.net)
+ Copyright \__\/\:\__  © 2012-2016 Eli Scheetz (email: eli@gotmls.net)
  *            \  \:\/\
  *             \__\::/ This program is free software; you can redistribute it
  *     ___     /__/:/ and/or modify it under the terms of the GNU General Public
@@ -57,23 +57,18 @@ function GOTMLS_user_can() {
 }
 
 function GOTMLS_menu() {
-	if (GOTMLS_user_can() && GOTMLS_get_nonce() && isset($_POST["GOTMLS_menu_group"]) && is_numeric($_POST["GOTMLS_menu_group"])) {
-		$GLOBALS["GOTMLS"]["tmp"]["settings_array"]["menu_group"] = $_POST["GOTMLS_menu_group"];
-		update_option('GOTMLS_settings_array', $GLOBALS["GOTMLS"]["tmp"]["settings_array"]);
-	}
 	$GOTMLS_Full_plugin_logo_URL = GOTMLS_images_path.'GOTMLS-16x16.gif';
 	$base_page = "GOTMLS-settings";
 	$base_function = "GOTMLS_settings";
 	$pluginTitle = "Anti-Malware";
 	$pageTitle = "$pluginTitle ".GOTMLS_Scan_Settings_LANGUAGE;
-	if (!function_exists("add_object_page") || $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["menu_group"])
+	if (GOTMLS_user_can()) {
 		$my_admin_page = add_menu_page($pageTitle, $pluginTitle, $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], $base_page, $base_function, $GOTMLS_Full_plugin_logo_URL);
-	else
-		$my_admin_page = add_object_page($pageTitle, $pluginTitle, $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], $base_page, $base_function, $GOTMLS_Full_plugin_logo_URL);
-	add_action('load-'.$my_admin_page, 'GOTMLS_admin_add_help_tab');
-	add_submenu_page($base_page, "$pluginTitle ".GOTMLS_Scan_Settings_LANGUAGE, GOTMLS_Scan_Settings_LANGUAGE, $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], $base_page, $base_function);
-	add_submenu_page($base_page, "$pluginTitle Firewall Options", "Firewall Options", $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], "GOTMLS-Firewall-Options", "GOTMLS_Firewall_Options");
-	add_submenu_page($base_page, "$pluginTitle ".GOTMLS_View_Quarantine_LANGUAGE, GOTMLS_View_Quarantine_LANGUAGE.(($Qs = GOTMLS_get_quarantine(true))?' <span class="awaiting-mod count-'.$Qs.'"><span class="awaiting-mod">'.$Qs.'</span></span>':""), $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], "GOTMLS-View-Quarantine", "GOTMLS_View_Quarantine");
+		add_action('load-'.$my_admin_page, 'GOTMLS_admin_add_help_tab');
+		add_submenu_page($base_page, "$pluginTitle ".GOTMLS_Scan_Settings_LANGUAGE, GOTMLS_Scan_Settings_LANGUAGE, $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], $base_page, $base_function);
+		add_submenu_page($base_page, "$pluginTitle Firewall Options", "Firewall Options", $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], "GOTMLS-Firewall-Options", "GOTMLS_Firewall_Options");
+		add_submenu_page($base_page, "$pluginTitle ".GOTMLS_View_Quarantine_LANGUAGE, GOTMLS_View_Quarantine_LANGUAGE.(($Qs = GOTMLS_get_quarantine(true))?' <span class="awaiting-mod count-'.$Qs.'"><span class="awaiting-mod">'.$Qs.'</span></span>':""), $GLOBALS["GOTMLS"]["tmp"]["settings_array"]["user_can"], "GOTMLS-View-Quarantine", "GOTMLS_View_Quarantine");
+	}
 }
 
 function GOTMLS_admin_add_help_tab() {
@@ -91,18 +86,6 @@ function GOTMLS_admin_add_help_tab() {
 			'content'	=> '<p>'.preg_replace('/\[(.+?)\]\((.+?)\)/', "<a target=\"_blank\" href=\"\\2\">\\1</a>", preg_replace('/[\r\n]+= /', "</p><b>", preg_replace('/ =[\r\n]+/', "</b><p>", $readme[0]))).'</p>'
 		));
 	}
-	if (is_multisite() && current_user_can("manage_network"))
-		$GOTMLS_menu_groups = array(__("Main Menu Item placed at the <b>Top</b>",'gotmls'),__("Main Menu Item placed at the <b>Bottom</b>",'gotmls'));
-	else
-		$GOTMLS_menu_groups = array(__("Main Menu Item placed below <b>Comments</b> and above <b>Appearance</b>",'gotmls'),__("Main Menu Item placed below <b>Settings</b>",'gotmls'));
-	$menu_opts = '<h5>'.__("Menu Item Placement Options",'gotmls').'</h5>';
-	foreach ($GOTMLS_menu_groups as $mg => $GOTMLS_menu_group)
-		$menu_opts .= '<div style="padding: 4px;" id="menu_group_div_'.$mg.'"><input type="radio" name="GOTMLS_menu_group" value="'.$mg.'"'.($GLOBALS["GOTMLS"]["tmp"]["settings_array"]["menu_group"]==$mg?' checked':'').' onchange="document.GOTMLS_menu_Form.submit();" />'.$GOTMLS_menu_group.'</div>';
-	$screen->add_help_tab(array(
-		'id'	=> 'GOTMLS_Menu_Placement',
-		'title'	=> __("Menu Placement", 'gotmls'),
-		'content'	=> '<form method="POST" name="GOTMLS_menu_Form" action="'.admin_url('admin.php?page=GOTMLS-settings&'.GOTMLS_set_nonce(__FUNCTION__."109")).'">'.$menu_opts.'</form>'
-	));
 }
 
 function GOTMLS_close_button($box_id, $margin = '6px') {
@@ -133,6 +116,10 @@ function GOTMLS_display_header($optional_box = "") {
 	}
 	$Update_Link .= "\">$new_version</a></div>";
 	$defLatest = (is_numeric($Latest = preg_replace('/[^0-9]/', "", GOTMLS_sexagesimal($GLOBALS["GOTMLS"]["tmp"]["Definition"]["Latest"]))) && is_numeric($Default = preg_replace('/[^0-9]/', "", GOTMLS_sexagesimal($GLOBALS["GOTMLS"]["tmp"]["Definition"]["Default"]))) && $Latest > $Default)?1:0;
+	if (is_array($keys = maybe_unserialize(get_option('GOTMLS_Installation_Keys', array()))) && array_key_exists(GOTMLS_installation_key, $keys))
+		$isRegistered = $keys[GOTMLS_installation_key];
+	else
+		$isRegistered = "";
 	$Update_Div ='<div id="findUpdates" style="display: none;"><center>'.__("Searching for updates ...",'gotmls').'<br /><img src="'.GOTMLS_images_path.'wait.gif" height=16 width=16 alt="Wait..." /><br /><input type="button" value="Cancel" onclick="cancelserver(\'findUpdates\');" /></center></div>';
 	echo '
 span.GOTMLS_date {float: right; width: 130px; white-space: nowrap;}
@@ -365,7 +352,7 @@ setDiv("div_file");
 	'.GOTMLS_box(__("Updates & Registration",'gotmls'), '<ul style=""><li>WordPress: <span class="GOTMLS_date">'.$wp_version.'</span></li>
 <li>Plugin: <span class="GOTMLS_date">'.GOTMLS_Version.'</span></li>
 <li>Definitions: <span class="GOTMLS_date">'.$GLOBALS["GOTMLS"]["tmp"]["Definition"]["Latest"].'</span></li>
-<li>'.(!$defLatest?'<span style="color: #F00;" id="GOTMLS_No_Key">No Key! <input type="button" style="float: right;" value="'.__("Get FREE Key!",'gotmls').'" class="button-primary" onclick="showhide(\'GOTMLS_No_Key\');showhide(\'GOTMLS_Key\', true);check_for_updates(\'Definition_Updates\');" /></span><div id="GOTMLS_Key" style="display: none; ':'<div style="').'margin: 0;">Key: <span style="float: right;">'.GOTMLS_installation_key.'</span></div></li></ul>
+<li>'.((!$defLatest && !$isRegistered)?'<form method="POST" action="'.admin_url('admin-ajax.php?'.GOTMLS_set_nonce(__FUNCTION__."349")).'" target="GOTMLS_iFrame" name="GOTMLS_Form_lognewkey"><input type="hidden" name="GOTMLS_installation_key" value="'.GOTMLS_installation_key.'"><input type="hidden" name="action" value="GOTMLS_lognewkey"><span style="color: #F00;" id="GOTMLS_No_Key">No Key! <input type="submit" style="float: right;" value="'.__("Get FREE Key!",'gotmls').'" class="button-primary" onclick="showhide(\'GOTMLS_No_Key\');showhide(\'GOTMLS_Key\', true);check_for_updates(\'Definition_Updates\');" /></span></form><div id="GOTMLS_Key" style="display: none; ':'<div style="').'margin: 0;">Key: <span style="float: right;">'.GOTMLS_installation_key.'</span></div></li></ul>
 	<form id="updateform" method="post" name="updateform" action="'.str_replace("GOTMLS_mt=", "GOTMLS_last_mt=", GOTMLS_script_URI).'&'.GOTMLS_set_nonce(__FUNCTION__."373").'">
 		<img style="display: none; float: right; margin-right: 14px;" src="'.GOTMLS_images_path.'checked.gif" height=16 width=16 alt="definitions file updated" id="autoUpdateDownload" onclick="showhide(\'autoUpdateForm\', true);">
 		'.str_replace('findUpdates', 'Definition_Updates', $Update_Div).'
@@ -441,7 +428,7 @@ setDiv("div_file");
 			setDivNAtext();
 			'.$GLOBALS["GOTMLS"]["tmp"]["onLoad"].'
 		}
-		if ('.$defLatest.')
+		if ('.($defLatest+strlen($isRegistered)).')
 			check_for_updates("Definition_Updates");
 //		else			showhide("registerKeyForm", true);
 		if (divNAtext)
@@ -487,7 +474,7 @@ setDiv("div_file");
 				</ul>
 			</div>
 			</form>
-			<a target="_blank" href="http://safebrowsing.clients.google.com/safebrowsing/diagnostic?site='.urlencode(GOTMLS_siteurl).'">Google Safe Browsing Diagnostic</a>', "stuffbox").'
+			<a target="_blank" href="https://www.google.com/transparencyreport/safebrowsing/diagnostic/index.html#url='.urlencode(GOTMLS_siteurl).'">Google Safe Browsing Diagnostic</a>', "stuffbox").'
 	'.GOTMLS_box(__("Last Scan Status",'gotmls'), GOTMLS_scan_log(), "stuffbox").'
 	'.$optional_box.'
 </div>';
@@ -722,6 +709,7 @@ function GOTMLS_View_Quarantine() {
 }
 
 function GOTMLS_Firewall_Options() {
+	global $current_user, $wpdb;
 	GOTMLS_update_definitions();
 	GOTMLS_display_header();
 	$GOTMLS_nonce_found = GOTMLS_get_nonce();
@@ -747,7 +735,7 @@ function GOTMLS_Firewall_Options() {
 			"icon" => "threat"
 		)
 	);
-	$patch_action = $lt.'form method="POST" name="GOTMLS_Form_XMLRPC_patch"'.$gt.$lt.'input type="hidden" name="'.str_replace('=', '" value="', GOTMLS_set_nonce(__FUNCTION__."1159")).'"'.$gt.$lt.'div style="float: right;"'.$gt.$lt.'input type="hidden" name="GOTMLS_XMLRPC_patching" value="1"'.$gt.$lt.'input type="submit" value="Block XMLRPC Access" style="display: none;" id="GOTMLS_XMLRPC_patch_button"'.$gt.$lt.'div id="GOTMLS_XMLRPC_patch_searching"'.$gt.__("Checking .htaccess file ...",'gotmls').' '.$lt.'img src="'.GOTMLS_images_path.'wait.gif" height=16 width=16 alt="Wait..." /'.$gt.$lt.'/div'.$gt.$lt.'/div'.$gt.$lt.'script'.$gt."\nfunction testComplete() {\nif (autoUpdateDownloadGIF = document.getElementById('autoUpdateDownload'))\n\tdonationAmount = autoUpdateDownloadGIF.src.replace(/^.+\?/,'');\nif ((autoUpdateDownloadGIF.src == donationAmount) || donationAmount=='0') {\n\tif (patch_searching_div = document.getElementById('GOTMLS_XMLRPC_patch_searching')) {\n\t\tif (autoUpdateDownloadGIF.src == donationAmount)\n\t\t\tpatch_searching_div.innerHTML = '<span style=\"color: #F00;\">".__("You must register and donate to use this feature!",'gotmls')."</span>';\n\t\telse\n\t\t\tpatch_searching_div.innerHTML = '<span style=\"color: #F00;\">".__("This feature is available to those who have donated!",'gotmls')."</span>';\n\t}\n} else {\n\tshowhide('GOTMLS_XMLRPC_patch_searching');\n\tshowhide('GOTMLS_XMLRPC_patch_button', true);\n}\n}\nwindow.onload=testComplete;\n$lt/script$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'question.gif"'.$gt.'Allow/Block XMLRPC Access (';
+	$patch_action = $lt.'form method="POST" name="GOTMLS_Form_XMLRPC_patch"'.$gt.$lt.'input type="hidden" name="'.str_replace('=', '" value="', GOTMLS_set_nonce(__FUNCTION__."1159")).'"'.$gt.$lt.'script'.$gt."\nfunction testComplete() {\nif (autoUpdateDownloadGIF = document.getElementById('autoUpdateDownload'))\n\tdonationAmount = autoUpdateDownloadGIF.src.replace(/^.+\?/,'');\nif ((autoUpdateDownloadGIF.src == donationAmount) || donationAmount=='0') {\n\tif (patch_searching_div = document.getElementById('GOTMLS_XMLRPC_patch_searching')) {\n\t\tif (autoUpdateDownloadGIF.src == donationAmount)\n\t\t\tpatch_searching_div.innerHTML = '<span style=\"color: #F00;\">".__("You must register and donate to use this feature!",'gotmls')."</span>';\n\t\telse\n\t\t\tpatch_searching_div.innerHTML = '<span style=\"color: #F00;\">".__("This feature is available to those who have donated!",'gotmls')."</span>';\n\t}\n} else {\n\tshowhide('GOTMLS_XMLRPC_patch_searching');\n\tshowhide('GOTMLS_XMLRPC_patch_button', true);\n}\n}\nwindow.onload=testComplete;\n$lt/script$gt$lt".'div style="float: right;"'.$gt.$lt.'input type="hidden" name="GOTMLS_XMLRPC_patching" value="';
 	$patch_found = false;
 	$find = '|<Files[^>]+xmlrpc.php>(.+?)</Files>\s*(# END GOTMLS Patch to Block XMLRPC Access\s*)*|is';
 	$head = str_replace(array('|<Files[^>]+', '(.+?)', '\\s*(', '\\s*)*|is'), array("<Files ", "\norder deny,allow\ndeny from all".(isset($_SERVER["REMOTE_ADDR"])?"\nallow from ".$_SERVER["REMOTE_ADDR"]:"").(isset($_SERVER["SERVER_ADDR"])?"\nallow from ".$_SERVER["SERVER_ADDR"]:"")."\n", "\n", "\n"), $find);
@@ -757,18 +745,18 @@ function GOTMLS_Firewall_Options() {
 			$patch_found = preg_match($find, $htaccess);
 	if ($patch_found) {
 		if ($GOTMLS_nonce_found && isset($_POST["GOTMLS_XMLRPC_patching"]) && ($_POST["GOTMLS_XMLRPC_patching"] < 0) && GOTMLS_file_put_contents(ABSPATH.'.htaccess', preg_replace($find, "", $htaccess)))
-			$patch_action .= $lt.'img src="'.GOTMLS_images_path.'checked.gif"'.$gt.' Now Allowing';
+			$patch_action .= '1"'.$gt.$lt.'input type="submit" value="Block XMLRPC Access" /'."$gt$lt/div$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'question.gif"'.$gt.'Block XMLRPC Access (Now Allowing Access';
 		elseif ($GOTMLS_nonce_found && isset($_POST["GOTMLS_XMLRPC_patching"]) && ($_POST["GOTMLS_XMLRPC_patching"] < 0))
-			$patch_action = str_replace('1"'.$gt.$lt.'input type="submit" value="Block', '-1"'.$gt.$lt.'input type="submit" value="Unblock', $patch_action).$lt.'img src="'.GOTMLS_images_path.'threat.gif"'.$gt.' Still Blocked: '.sprintf(__("Failed to remove XMLRPC Protection (.htaccess %s)",'gotmls'),(is_readable(ABSPATH.'.htaccess')?'read-'.(is_writable(ABSPATH.'.htaccess')?'write':'only'):"unreadable").": ".strlen($htaccess).GOTMLS_fileperms(ABSPATH.'.htaccess'));
+			$patch_action .= '-1"'.$gt.$lt.'input type="submit" value="Unblock XMLRPC Access" /'."$gt$lt/div$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'threat.gif"'.$gt.'Block XMLRPC Access (Still Blocking: '.sprintf(__("Failed to remove XMLRPC Protection [.htaccess %s]",'gotmls'),(is_readable(ABSPATH.'.htaccess')?'read-'.(is_writable(ABSPATH.'.htaccess')?'write?':'only!'):"unreadable!").": ".strlen($htaccess).GOTMLS_fileperms(ABSPATH.'.htaccess'));
 		else
-			$patch_action = str_replace('1"'.$gt.$lt.'input type="submit" value="Block', '-1"'.$gt.$lt.'input type="submit" value="Unblock', $patch_action).'Currently Blocked';
+			$patch_action .= '-1"'.$gt.$lt.'input type="submit" value="Unblock XMLRPC Access" /'."$gt$lt/div$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'checked.gif"'.$gt.'Block XMLRPC Access (Currently Blocked';
 	} else {
 		if ($GOTMLS_nonce_found && isset($_POST["GOTMLS_XMLRPC_patching"]) && ($_POST["GOTMLS_XMLRPC_patching"] > 0) && GOTMLS_file_put_contents(ABSPATH.'.htaccess', "$head$htaccess"))
-			$patch_action = str_replace('1"'.$gt.$lt.'input type="submit" value="Block', '-1"'.$gt.$lt.'input type="submit" value="Unblock', $patch_action).$lt.'img src="'.GOTMLS_images_path.'checked.gif"'.$gt.' Now Blocking';
+			$patch_action .= '-1"'.$gt.$lt.'input type="submit" value="Unblock XMLRPC Access" /'."$gt$lt/div$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'checked.gif"'.$gt.'Block XMLRPC Access (Now Blocked';
 		elseif ($GOTMLS_nonce_found && isset($_POST["GOTMLS_XMLRPC_patching"]) && ($_POST["GOTMLS_XMLRPC_patching"] > 0))
-			$patch_action .= $lt.'img src="'.GOTMLS_images_path.'threat.gif"'.$gt.' Still Allowed: '.sprintf(__("Failed to install XMLRPC Protection (.htaccess %s)",'gotmls'),(is_readable(ABSPATH.'.htaccess')?'read-'.(is_writable(ABSPATH.'.htaccess')?'write':'only'):"unreadable").": ".strlen($htaccess).GOTMLS_fileperms(ABSPATH.'.htaccess'));
+			$patch_action .= '1"'.$gt.$lt.'input type="submit" value="Block XMLRPC Access" /'."$gt$lt/div$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'threat.gif"'.$gt.'Block XMLRPC Access (Still Allowing Access: '.sprintf(__("Failed to install XMLRPC Protection [.htaccess %s]",'gotmls'),(is_readable(ABSPATH.'.htaccess')?'read-'.(is_writable(ABSPATH.'.htaccess')?'write?':'only!'):"unreadable!").": ".strlen($htaccess).GOTMLS_fileperms(ABSPATH.'.htaccess'));
 		else
-			$patch_action .= 'Currently Allowed';
+			$patch_action .= '1"'.$gt.$lt.'input type="submit" value="Block XMLRPC Access" /'."$gt$lt/div$gt$lt".'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'b'.$gt.$lt.'img src="'.GOTMLS_images_path.'question.gif"'.$gt.'Block XMLRPC Access (Currently Allowing Access';
 	}
 	$patch_action .= ")$lt/b$gt$lt/p$gt".__("Most WordPress site do not use the XMLRPC features and hack attempt on the xmlrpc.php file are more common then ever before. Even if there are no vulnerabilities for hackers to exploit these attempts can cause slowness or downtime similar to a DDoS attack. This patch automatically blocks all external access to the xmlrpc.php file.",'gotmls').$lt.'/div'.$gt.$lt.'/form'.$gt.$lt.'hr /'.$gt;
 	$patch_status = 0;
@@ -814,17 +802,42 @@ function GOTMLS_Firewall_Options() {
 	'.$lt.'form method="POST" name="GOTMLS_Form_patch"'.$gt.$lt.'div style="float: right;"'.$gt.$lt.'input type="hidden" name="'.str_replace('=', '" value="', GOTMLS_set_nonce(__FUNCTION__."1223")).'"'.$gt.$lt.'input type="submit" value="'.$patch_attr[$patch_status]["action"].'" style="'.($patch_status?'"'.$gt:' display: none;" id="GOTMLS_patch_button"'.$gt.$lt.'div id="GOTMLS_patch_searching" style="float: right;"'.$gt.__("Checking for session compatibility ...",'gotmls').' '.$lt.'img src="'.GOTMLS_images_path.'wait.gif" height=16 width=16 alt="Wait..." /'.$gt.$lt.'/div'.$gt).$lt.'input type="hidden" name="GOTMLS_patching" value="1"'.$gt.$lt.'/div'.$gt.$lt.'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'img src="'.GOTMLS_images_path.$patch_attr[$patch_status]["icon"].'.gif"'.$gt.$lt.'b'.$gt.'Brute-force Protection '.$patch_attr[$patch_status]["status"].$lt.'/b'.$gt.$lt.'/p'.$gt.$patch_attr[$patch_status]["language"].__(" For more information on Brute-Force attack prevention and the WordPress wp-login-php file ",'gotmls').' '.$lt.'a target="_blank" href="http://gotmls.net/tag/wp-login-php/"'.$gt.__("read my blog",'gotmls')."$lt/a$gt.$lt/div$gt$lt/form$gt\n{$lt}script type='text/javascript'$gt\nfunction search_patch_onload() {\n\tstopCheckingSession = checkupdateserver('".GOTMLS_images_path."gotmls.js?SESSION=0', 'GOTMLS_patch_searching');\n}\nif (window.addEventListener)\n\twindow.addEventListener('load', search_patch_onload)\nelse\n\tdocument.attachEvent('onload', search_patch_onload);\n$lt/script$gt";
 	$admin_notice = "";
 	if ($current_user->user_login == "admin") {
-		if ($GOTMLS_nonce_found && isset($_POST["GOTMLS_admin_username"]) && ("admin" != trim($_POST["GOTMLS_admin_username"])) && strlen(trim($_POST["GOTMLS_admin_username"])) && preg_match('/^\s*[a-z_0-9\@\.\-]{3,}\s*$/i', $_POST["GOTMLS_admin_username"])) {
-				if ($wpdb->update($wpdb->users, array("user_login" => trim($_POST["GOTMLS_admin_username"])), array("user_login" => "admin")))
+		$admin_notice .= $lt.'hr /'.$gt;
+		if ($GOTMLS_nonce_found && isset($_POST["GOTMLS_admin_username"]) && ($current_user->user_login != trim($_POST["GOTMLS_admin_username"])) && strlen(trim($_POST["GOTMLS_admin_username"])) && preg_match('/^\s*[a-z_0-9\@\.\-]{3,}\s*$/i', $_POST["GOTMLS_admin_username"])) {
+				if ($wpdb->update($wpdb->users, array("user_login" => trim($_POST["GOTMLS_admin_username"])), array("user_login" => $current_user->user_login)))
 					$admin_notice .= $lt.'div class="updated"'.$gt.sprintf(__("You username has been change to %s. Don't forget to use your new username when you login again.",'gotmls'), $_POST["GOTMLS_admin_username"]).$lt.'/div'.$gt;
 				else
-					$admin_notice .= $lt.'div class="updated"'.$gt.sprintf(__("SQL Error changing username: %s. Please try again later.",'gotmls'), $wpdb->last_error).$lt.'/div'.$gt;
+					$admin_notice .= $lt.'div class="error"'.$gt.sprintf(__("SQL Error changing username: %s. Please try again later.",'gotmls'), $wpdb->last_error).$lt.'/div'.$gt;
 		} else {
-			$admin_notice .= $lt.'hr /'.$gt;
 			if (isset($_POST["GOTMLS_admin_username"]))
 				$admin_notice .= $lt.'div class="updated"'.$gt.sprintf(__("Your new username must be at least 3 characters and can only contain &quot;%s&quot;. Please try again.",'gotmls'), "a-z0-9_.-@").$lt.'/div'.$gt;
-			$admin_notice .= $lt.'form method="POST" name="GOTMLS_Form_admin"'.$gt.$lt.'div style="float: right;"'.$gt.$lt.'div style="float: left;"'.$gt.__("Change your username:",'gotmls').$lt.'/div'.$gt.$lt.'input type="hidden" name="'.str_replace('=', '" value="', GOTMLS_set_nonce(__FUNCTION__."1235")).'"'.$gt.$lt.'input style="float: left;" type="text" id="GOTMLS_admin_username" name="GOTMLS_admin_username" size="6" value="admin"'.$gt.$lt.'input style="float: left;" type="submit" value="Change"'.$gt.$lt.'/div'.$gt.$lt.'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'img src="'.GOTMLS_images_path.'threat.gif"'.$gt.$lt.'b'.$gt.'Admin Notice'.$lt.'/b'.$gt.$lt.'/p'.$gt.__("Your username is \"admin\", this is the most commonly guessed username by hackers and brute-force scripts. It is highly recommended that you change your username immediately.",'gotmls').$lt.'/div'.$gt.$lt.'/form'.$gt;
+			$admin_notice .= $lt.'form method="POST" name="GOTMLS_Form_admin"'.$gt.$lt.'div style="float: right;"'.$gt.$lt.'div style="float: left;"'.$gt.__("Change your username:",'gotmls').$lt.'/div'.$gt.$lt.'input type="hidden" name="'.str_replace('=', '" value="', GOTMLS_set_nonce(__FUNCTION__."1235")).'"'.$gt.$lt.'input style="float: left;" type="text" id="GOTMLS_admin_username" name="GOTMLS_admin_username" size="6" value="'.$current_user->user_login.'"'.$gt.$lt.'input style="float: left;" type="submit" value="Change"'.$gt.$lt.'/div'.$gt.$lt.'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'img src="'.GOTMLS_images_path.'threat.gif"'.$gt.$lt.'b'.$gt.'Admin Notice'.$lt.'/b'.$gt.$lt.'/p'.$gt.__("Your username is \"admin\", this is the most commonly guessed username by hackers and brute-force scripts. It is highly recommended that you change your username immediately.",'gotmls').$lt.'/div'.$gt.$lt.'/form'.$gt;
 		}
+	}
+	if ($GOTMLS_nonce_found && isset($_POST["GOTMLS_wpfirewall_action"])) {
+		if ($_POST["GOTMLS_wpfirewall_action"] == "exclude_terms")
+			update_option("WP_firewall_exclude_terms", "");
+		elseif ($_POST["GOTMLS_wpfirewall_action"] == "whitelisted_ip" && isset($_SERVER["REMOTE_ADDR"])) {
+			$ips = maybe_unserialize(get_option("WP_firewall_whitelisted_ip", "not Array!"));
+			if (is_array($ips))
+				$ips = array_merge($ips, array($_SERVER["REMOTE_ADDR"]));
+			else
+				$ips = array($_SERVER["REMOTE_ADDR"]);
+			update_option("WP_firewall_whitelisted_ip", serialize($ips));
+		}
+	}
+	if (get_option("WP_firewall_exclude_terms", "Not Found!") == "allow") {
+		$end = "$lt/div$gt$lt/form$gt\n{$lt}hr /$gt";
+		$img = 'threat.gif"';
+		$button = $lt.'input type="submit" onclick="document.getElementById(\'GOTMLS_wpfirewall_action\').value=\'exclude_terms\';" value="'.__("Disable this Rule",'gotmls').'"'.$gt;
+		$wpfirewall_action = $lt.'form method="POST" name="GOTMLS_Form_wpfirewall2"'.$gt.$lt.'div style="float: right;"'.$gt.$lt.'input type="hidden" name="GOTMLS_wpfirewall_action" id="GOTMLS_wpfirewall_action" value=""'.$gt.$lt.'input type="hidden" name="'.str_replace('=', '" value="', GOTMLS_set_nonce(__FUNCTION__."1223")).'"'.$gt.$button.$lt.'/div'.$gt.$lt.'div style="padding: 0 30px;"'.$gt.$lt.'p'.$gt.$lt.'img src="'.GOTMLS_images_path.$img.$gt.$lt.'b'.$gt."WP Firewall 2 (Conflicting Firewall Rule)$lt/b$gt$lt/p$gt".__("The Conflicting Firewall Rule (WP_firewall_exclude_terms) activated by the WP Firewall 2 plugin has been shown to interfere with the Definition Updates and WP Core File Scans in my Anti-Malware plugin. I recommend that you disable this rule in the WP Firewall 2 plugin.",'gotmls').$end;
+		if (isset($_SERVER["REMOTE_ADDR"])) {
+			if (is_array($ips = maybe_unserialize(get_option("WP_firewall_whitelisted_ip", "not Array!"))) && in_array($_SERVER["REMOTE_ADDR"], $ips))
+				$wpfirewall_action = str_replace(array($img, $end), array('question.gif"', __(" However, your current IP has been Whitelisted so you could probably keep this rule enabled if you really want to.",'gotmls').$end), $wpfirewall_action);
+			else
+				$wpfirewall_action = str_replace(array($button, $end), array($button.$lt."br /$gt$lt".'input type="submit" onclick="document.getElementById(\'GOTMLS_wpfirewall_action\').value=\'whitelisted_ip\';" value="'.__("Whitelist your IP",'gotmls').'"'.$gt, __(" However, if you would like to keep this rule enabled you should at least Whitelist your IP.",'gotmls').$end), $wpfirewall_action);
+		}
+		$sec_opts = $wpfirewall_action.$sec_opts;
 	}
 	echo GOTMLS_box(__("Firewall Options",'gotmls'), $sec_opts.$admin_notice)."\n</div></div></div>";
 }
@@ -1249,6 +1262,27 @@ function GOTMLS_ajax_logintime() {
 add_action('wp_ajax_nopriv_GOTMLS_logintime', 'GOTMLS_ajax_logintime');
 add_action('wp_ajax_GOTMLS_logintime', 'GOTMLS_ajax_logintime');
 
+function GOTMLS_ajax_lognewkey() {
+	@header("Content-type: text/javascript");
+	if (GOTMLS_get_nonce()) {
+		if (isset($_POST["GOTMLS_installation_key"]) && ($_POST["GOTMLS_installation_key"] == GOTMLS_installation_key)) {
+			$keys = maybe_unserialize(get_option('GOTMLS_Installation_Keys', array()));
+			if (is_array($keys)) {
+				$count = count($keys);
+				if (!array_key_exists(GOTMLS_installation_key, $keys))
+					$keys = array_merge($keys, array(GOTMLS_installation_key => GOTMLS_siteurl));
+			} else
+				$keys = array(GOTMLS_installation_key => GOTMLS_siteurl);
+			update_option("GOTMLS_Installation_Keys", serialize($keys));
+			die("\n//$count~".count($keys));
+		} else
+			die("\n//0");
+	} else
+		die(GOTMLS_Invalid_Nonce("\n//Log New Key Error: ")."\n");
+}
+add_action('wp_ajax_GOTMLS_lognewkey', 'GOTMLS_ajax_lognewkey');
+add_action('wp_ajax_nopriv_GOTMLS_lognewkey', 'GOTMLS_ajax_nopriv');
+
 function GOTMLS_set_plugin_action_links($links_array, $plugin_file) {
 	if ($plugin_file == substr(str_replace("\\", "/", __FILE__), (-1 * strlen($plugin_file))) && strlen($plugin_file) > 10)
 		$links_array = array_merge(array('<a href="'.admin_url('admin.php?page=GOTMLS-settings').'"><span class="dashicons dashicons-admin-settings"></span>'.GOTMLS_Scan_Settings_LANGUAGE.'</a>'), $links_array);
@@ -1437,7 +1471,7 @@ function GOTMLS_ajax_fix() {
 					if (is_file($path)) {
 						echo "<li>Fixing $path ... ";
 						$li_js .= GOTMLS_scanfile($path);
-						echo "</li>\n$li_js/*-->*"."/\n$callAlert\n</script>\n";
+						echo "</li>\n$li_js/*-->*"."/\n$callAlert\n//".$GLOBALS["GOTMLS"]["tmp"]["debug_fix"]."\n</script>\n";
 						$li_js = "<script type=\"text/javascript\">\n/*<!--*"."/";
 					} else
 						echo "<li>".__("File ".htmlentities($path)." not found!",'gotmls')."</li>";
@@ -1576,7 +1610,7 @@ function GOTMLS_ajax_scan() {
 			}
 		}
 		window.parent.showhide("GOTMLS_iFrame", true);
-		</script><table style="top: 0px; left: 0px; width: 100%; height: 100%; position: absolute;"><tr><td style="width: 100%"><form style="margin: 0;" method="post" action="'.admin_url('admin-ajax.php?'.GOTMLS_set_nonce(__FUNCTION__."1583")).'" onsubmit="return confirm(\''.__("Are you sure this file is not infected and you want to ignore it in future scans?",'gotmls').'\');"><input type="hidden" name="GOTMLS_whitelist" value="'.GOTMLS_encode($file).'"><input type="hidden" name="action" value="GOTMLS_whitelist"><input type="hidden" name="GOTMLS_chksum" value="'.md5($GLOBALS["GOTMLS"]["tmp"]["file_contents"]).'O'.GOTMLS_installation_key.'"><input type="submit" value="Whitelist this file" style="float: right;"></form><div id="fileperms" class="shadowed-box rounded-corners" style="display: none; position: absolute; left: 8px; top: 29px; background-color: #ccc; border: medium solid #C00; box-shadow: -3px 3px 3px #666; border-radius: 10px; padding: 10px;"><b>File Details</b><br />encoding: '.(function_exists("mb_detect_encoding")?mb_detect_encoding($GLOBALS["GOTMLS"]["tmp"]["file_contents"]):"Unknown").'<br />size: '.strlen($GLOBALS["GOTMLS"]["tmp"]["file_contents"]).' ('.filesize($file).'bytes)<br />permissions: '.GOTMLS_fileperms($file).'<br />modified:'.date(" Y-m-d H:i:s ", filemtime($file)).'<br />changed:'.date(" Y-m-d H:i:s ", filectime($file)).'</div><div style="overflow: auto;"><span onmouseover="document.getElementById(\'fileperms\').style.display=\'block\';" onmouseout="document.getElementById(\'fileperms\').style.display=\'none\';">'.__("Potential threats in file:",'gotmls').'</span> ('.$fa.' )</div></td></tr><tr><td style="height: 100%"><textarea id="ta_file" style="width: 100%; height: 100%">'.htmlentities(str_replace("\r", "", $GLOBALS["GOTMLS"]["tmp"]["file_contents"])).'</textarea></td></tr></table>');
+		</script><table style="top: 0px; left: 0px; width: 100%; height: 100%; position: absolute;"><tr><td style="width: 100%"><form style="margin: 0;" method="post" action="'.admin_url('admin-ajax.php?'.GOTMLS_set_nonce(__FUNCTION__."1583")).'" onsubmit="return confirm(\''.__("Are you sure this file is not infected and you want to ignore it in future scans?",'gotmls').'\');"><input type="hidden" name="GOTMLS_whitelist" value="'.GOTMLS_encode($file).'"><input type="hidden" name="action" value="GOTMLS_whitelist"><input type="hidden" name="GOTMLS_chksum" value="'.md5($GLOBALS["GOTMLS"]["tmp"]["file_contents"]).'O'.GOTMLS_installation_key.'"><input type="submit" value="Whitelist this file" style="float: right;"></form><div id="fileperms" class="shadowed-box rounded-corners" style="display: none; position: absolute; left: 8px; top: 29px; background-color: #ccc; border: medium solid #C00; box-shadow: -3px 3px 3px #666; border-radius: 10px; padding: 10px;"><b>File Details: '.basename($file).'</b><br />in: '.dirname(realpath($file)).'<br />encoding: '.(function_exists("mb_detect_encoding")?mb_detect_encoding($GLOBALS["GOTMLS"]["tmp"]["file_contents"]):"Unknown").'<br />size: '.strlen($GLOBALS["GOTMLS"]["tmp"]["file_contents"]).' ('.filesize(realpath($file)).'bytes)<br />permissions: '.GOTMLS_fileperms(realpath($file)).'<br />Owner/Group: '.fileowner(realpath($file)).'/'.filegroup(realpath($file)).' (you are: '.getmyuid().'/'.getmygid().')<br />modified:'.date(" Y-m-d H:i:s ", filemtime(realpath($file))).'<br />changed:'.date(" Y-m-d H:i:s ", filectime(realpath($file))).'</div><div style="overflow: auto;"><span onmouseover="document.getElementById(\'fileperms\').style.display=\'block\';" onmouseout="document.getElementById(\'fileperms\').style.display=\'none\';">'.__("Potential threats in file:",'gotmls').'</span> ('.$fa.' )</div></td></tr><tr><td style="height: 100%"><textarea id="ta_file" style="width: 100%; height: 100%">'.htmlentities(str_replace("\r", "", $GLOBALS["GOTMLS"]["tmp"]["file_contents"])).'</textarea></td></tr></table>');
 					}
 				}
 			}

@@ -1,7 +1,7 @@
 <?php
 /*
 * Tiny Compress Images - WordPress plugin.
-* Copyright (C) 2015 Voormedia B.V.
+* Copyright (C) 2015-2016 Voormedia B.V.
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the Free
@@ -26,16 +26,13 @@ class Tiny_Plugin extends Tiny_WP_Base {
     private $twig;
 
     public static function jpeg_quality() {
-          return 95;
+        return 95;
     }
 
     public function __construct() {
         parent::__construct();
 
         $this->settings = new Tiny_Settings();
-        if (is_admin()) {
-            add_action('admin_menu', $this->get_method('admin_menu'));
-        }
     }
 
     public function set_compressor($compressor) {
@@ -52,6 +49,7 @@ class Tiny_Plugin extends Tiny_WP_Base {
     public function admin_init() {
         add_filter('manage_media_columns', $this->get_method('add_media_columns'));
         add_action('manage_media_custom_column', $this->get_method('render_media_column'), 10, 2);
+        add_action('attachment_submitbox_misc_actions', $this->get_method('show_media_info'));
         add_action('wp_ajax_tiny_compress_image', $this->get_method('compress_image'));
         add_action('admin_action_tiny_bulk_compress', $this->get_method('bulk_compress'));
         add_action('admin_enqueue_scripts', $this->get_method('enqueue_scripts'));
@@ -87,8 +85,9 @@ class Tiny_Plugin extends Tiny_WP_Base {
             'wpVersion' => self::wp_version(),
             'pluginVersion' => self::plugin_version(),
             'L10nAllDone' => __('All images are processed', 'tiny-compress-images'),
-            'L10nBulkAction' => __('Compress Images', 'tiny-compress-images'),
+            'L10nBulkAction' => __('Compress All Images', 'tiny-compress-images'),
             'L10nCompressing' => __('Compressing', 'tiny-compress-images'),
+            'L10nCompression' => __('compression', 'tiny-compress-images'),
             'L10nCompressions' => __('compressions', 'tiny-compress-images'),
             'L10nError' => __('Error', 'tiny-compress-images'),
             'L10nInternalError' => __('Internal error', 'tiny-compress-images'),
@@ -102,7 +101,7 @@ class Tiny_Plugin extends Tiny_WP_Base {
         $mime_type = get_post_mime_type($attachment_id);
         $tiny_metadata = new Tiny_Metadata($attachment_id, $metadata);
 
-        if ($this->settings->get_compressor() === null || strpos($mime_type, 'image/') !== 0) {
+        if ($this->settings->get_compressor() === null || !$tiny_metadata->can_be_compressed()) {
             return array($tiny_metadata, null);
         }
 
@@ -111,22 +110,22 @@ class Tiny_Plugin extends Tiny_WP_Base {
 
         $compressor = $this->settings->get_compressor();
         $active_tinify_sizes = $this->settings->get_active_tinify_sizes();
-        $uncompressed_sizes = $tiny_metadata->get_uncompressed_sizes($active_tinify_sizes);
+        $uncompressed_images = $tiny_metadata->filter_images('uncompressed', $active_tinify_sizes);
 
-        foreach ($uncompressed_sizes as $uncompressed_size) {
+        foreach ($uncompressed_images as $size => $image) {
             try {
-                $tiny_metadata->add_request($uncompressed_size);
+                $image->add_request();
                 $tiny_metadata->update();
 
-                $resize = $tiny_metadata->is_resizable($uncompressed_size) ? $this->settings->get_resize_options() : false;
+                $resize = Tiny_Metadata::is_original($size) ? $this->settings->get_resize_options() : false;
                 $preserve = count($this->settings->get_preserve_options()) > 0 ? $this->settings->get_preserve_options() : false;
-                $response = $compressor->compress_file($tiny_metadata->get_filename($uncompressed_size), $resize, $preserve);
+                $response = $compressor->compress_file($image->filename, $resize, $preserve);
 
-                $tiny_metadata->add_response($response, $uncompressed_size);
+                $image->add_response($response);
                 $tiny_metadata->update();
                 $success++;
             } catch (Tiny_Exception $e) {
-                $tiny_metadata->add_exception($e, $uncompressed_size);
+                $image->add_exception($e);
                 $tiny_metadata->update();
                 $failed++;
             }
@@ -139,6 +138,8 @@ class Tiny_Plugin extends Tiny_WP_Base {
         if (!empty($metadata)) {
             list($tiny_metadata, $result) = $this->compress($metadata, $attachment_id);
             return $tiny_metadata->update_wp_metadata($metadata);
+        } else {
+            return $metadata;
         }
     }
 
@@ -171,7 +172,7 @@ class Tiny_Plugin extends Tiny_WP_Base {
         if ($json) {
             $result['message'] = $tiny_metadata->get_latest_error();
             $result['status'] = $this->settings->get_status();
-            $result['thumbnail'] = $tiny_metadata->get_url('thumbnail');
+            $result['thumbnail'] = $tiny_metadata->get_image('thumbnail', true)->url;
             echo json_encode($result);
         } else {
             echo $this->render_compress_details($tiny_metadata);
@@ -203,21 +204,26 @@ class Tiny_Plugin extends Tiny_WP_Base {
 
     public function render_media_column($column, $id) {
         if ($column === self::MEDIA_COLUMN) {
+            echo '<div class="tiny-ajax-container">';
             $this->render_compress_details(new Tiny_Metadata($id));
+            echo '</div>';
         }
     }
 
-    private function render_compress_details($tiny_metadata) {
-        $active = $this->settings->get_active_tinify_sizes();
-        $uncompressed = $tiny_metadata->get_uncompressed_sizes($active);
-        $not_compressed_active = count($tiny_metadata->get_not_compressed_active_sizes($active));
-        $savings = $tiny_metadata->get_savings();
-        $error = $tiny_metadata->get_latest_error();
-        $missing = $tiny_metadata->get_missing_count();
-        $modified = $tiny_metadata->get_modified_count();
-        $compressing = (count($uncompressed) > 0) ? count($uncompressed) : count($active);
+    public function show_media_info() {
+        global $post;
+        echo '<div class="misc-pub-section tiny-compress-images">';
+        echo '<h4>' . __('Compress JPEG & PNG Images', 'tiny-compress-images') . '</h4>';
+        echo '<div class="tiny-ajax-container">';
+        $this->render_compress_details(new Tiny_Metadata($post->ID));
+        echo '</div></div>';
+    }
 
-        if ($tiny_metadata->get_in_progress_count() > 0) {
+    private function render_compress_details($tiny_metadata) {
+        $available_sizes = array_keys($this->settings->get_sizes());
+        $active_tinify_sizes = $this->settings->get_active_tinify_sizes();
+        $in_progress = count($tiny_metadata->filter_images('in_progress'));
+        if ($in_progress > 0) {
             include(dirname(__FILE__) . '/views/compress-details-processing.php');
         } else {
             include(dirname(__FILE__) . '/views/compress-details.php');
@@ -230,7 +236,7 @@ class Tiny_Plugin extends Tiny_WP_Base {
         echo '<div class="wrap" id="tiny-bulk-compress">';
         echo '<h2>' . __('Compress JPEG & PNG Images', 'tiny-compress-images') . '</h2>';
         if (empty($_POST['tiny-bulk-compress']) && empty($_REQUEST['ids'])) {
-            $result = $wpdb->get_results("SELECT COUNT(*) AS `count` FROM $wpdb->posts WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' ORDER BY ID DESC", ARRAY_A);
+            $result = $wpdb->get_results("SELECT COUNT(*) AS `count` FROM $wpdb->posts WHERE post_type = 'attachment' AND (post_mime_type = 'image/jpeg' OR post_mime_type = 'image/png') ORDER BY ID DESC", ARRAY_A);
             $image_count = $result[0]['count'];
             $sizes_count = count($this->settings->get_active_tinify_sizes());
 
@@ -238,7 +244,7 @@ class Tiny_Plugin extends Tiny_WP_Base {
             esc_html_e('Use this tool to compress all images in your media library. Only images that have not been compressed will be compressed.', 'tiny-compress-images');
             echo '</p>';
             echo '<p>';
-            echo sprintf(esc_html__('We have found %d images in your media library and for each image %d sizes will be compressed.', 'tiny-compress-images'),
+            echo sprintf(esc_html__('We have found %d images in your media library and for each image a maximum of %d sizes will be compressed.', 'tiny-compress-images'),
              $image_count, $sizes_count) . ' ';
             echo sprintf(esc_html__('This results in %d compressions at most.', 'tiny-compress-images'), $image_count * $sizes_count);
             echo '</p>';
@@ -266,10 +272,10 @@ class Tiny_Plugin extends Tiny_WP_Base {
             }
 
             // Get all ids and names of the images and not the whole objects which will only fill memory
-            $items = $wpdb->get_results("SELECT ID, post_title FROM $wpdb->posts WHERE post_type = 'attachment' AND post_mime_type LIKE 'image/%' $cond ORDER BY ID DESC", ARRAY_A);
+            $items = $wpdb->get_results("SELECT ID, post_title FROM $wpdb->posts WHERE post_type = 'attachment' AND (post_mime_type = 'image/jpeg' OR post_mime_type = 'image/png') $cond ORDER BY ID DESC", ARRAY_A);
 
             echo '<p>';
-            esc_html_e('Please be patient while the images are being compressed, it can take a while if you have many images. Do not navigate away from this page because it will stop the process.', 'tiny-compress-images');
+            esc_html_e('Please be patient while the images are being optimized, it can take a while if you have many images. Do not navigate away from this page because it will stop the process.', 'tiny-compress-images');
             echo '</p><p>';
             esc_html_e('You will be notified via this page when the processing is done.', 'tiny-compress-images');
             echo "</p>";

@@ -28,24 +28,24 @@ function mock_jpg_response() {
     header("Compression-Count: {$session['Compression-Count']}");
 
     $response = array(
-        "input" => array("size" => 15391, "type" => "image/jpg"),
-        "output" => array("size" => 13910, "type" => "image/jpg", "ratio" => 0.904)
+        "input" => array("size" => 15391, "type" => "image/jpeg"),
+        "output" => array("size" => 13910, "type" => "image/jpeg", "ratio" => 0.904)
     );
     return json_encode($response);
 }
 
-function mock_large_response() {
+function mock_preserve_jpg_copyright_response() {
     global $session;
 
     $session['Compression-Count'] += 1;
     header('HTTP/1.1 201 Created');
-    header("Location: http://webservice/output/large.png");
+    header("Location: http://webservice/output/copyright.jpg");
     header("Content-Type: application/json; charset=utf-8");
     header("Compression-Count: {$session['Compression-Count']}");
 
     $response = array(
-        "input" => array("size" => 80506, "type" => "image/jpg"),
-        "output" => array("size" => 70200, "type" => "image/jpg", "ratio" => 0.872)
+        "input" => array("size" => 110329, "type" => "image/jpeg"),
+        "output" => array("size" => 97835, "type" => "image/jpeg", "ratio" => 0.8868)
     );
     return json_encode($response);
 }
@@ -59,7 +59,7 @@ function mock_empty_response() {
 
     $response = array(
         "error" => "InputMissing",
-        "message" => "Your monthly limit has been exceeded"
+        "message" => "File is empty"
     );
     return json_encode($response);
 }
@@ -89,8 +89,9 @@ function mock_invalid_json_response() {
     return '{invalid: json}';
 }
 
+
 $api_key = get_api_key();
-if ($api_key == 'PNG123') {
+if (substr($api_key, 0, 6) == 'PNG123') {
     if (intval($_SERVER['CONTENT_LENGTH']) == 0) {
         echo mock_empty_response();
     } else {
@@ -102,6 +103,12 @@ if ($api_key == 'PNG123') {
     } else {
         echo mock_jpg_response();
     }
+} else if ($api_key == 'PRESERVEJPG123') {
+    if (intval($_SERVER['CONTENT_LENGTH']) == 0) {
+        echo mock_empty_response();
+    } else {
+        echo mock_preserve_jpg_copyright_response();
+    }
 } else if ($api_key == 'JSON1234') {
     if (intval($_SERVER['CONTENT_LENGTH']) == 0) {
         echo mock_empty_response();
@@ -110,6 +117,8 @@ if ($api_key == 'PNG123') {
     }
 } else if ($api_key == 'LIMIT123') {
     echo mock_limit_reached_response();
+} else if ($api_key == 'GATEWAYTIMEOUT') {
+    echo mock_service_unavailable_response();
 } else {
     echo mock_invalid_response();
 }

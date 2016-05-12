@@ -5,7 +5,7 @@
 		private $startTime;
 		private $blockCache = false;
 		private $err = "";
-		private $cacheFilePath = "";
+		public $cacheFilePath = "";
 
 		public function __construct(){
 			//to fix: PHP Notice: Undefined index: HTTP_USER_AGENT
@@ -43,7 +43,6 @@
 			}
 
 			$this->cacheFilePath = $this->cacheFilePath ? rtrim($this->cacheFilePath, "/")."/" : "";
-
 		}
 
 		public function set_cdn(){
@@ -85,7 +84,7 @@
 			return $content;
 		}
 
-		public function createCache(){
+		public function createCache(){		
 			if(isset($this->options->wpFastestCacheStatus)){
 
 				if(isset($this->options->wpFastestCacheLoggedInUser) && $this->options->wpFastestCacheLoggedInUser == "on"){
@@ -95,6 +94,10 @@
 							return 0;
 						}
 					}
+				}
+
+				if(preg_match("/\?/", $_SERVER["REQUEST_URI"]) && !preg_match("/\/\?fdx\_switcher\=true/", $_SERVER["REQUEST_URI"])){ // for WP Mobile Edition
+					return 0;
 				}
 
 				if(preg_match("/(".$this->get_excluded_useragent().")/", $_SERVER['HTTP_USER_AGENT'])){
@@ -132,25 +135,42 @@
 					return 0;
 				}
 
+				if($this->exclude_page()){
+					//echo "<!-- Wp Fastest Cache: Exclude Page -->"."\n";
+					return 0;
+				}
+
 				//to show cache version via php if htaccess rewrite rule does not work
-				if($this->cacheFilePath && file_exists($this->cacheFilePath."index.html")){
+				if($this->cacheFilePath && @file_exists($this->cacheFilePath."index.html")){
 					if($content = @file_get_contents($this->cacheFilePath."index.html")){
 						$content = $content."<!-- via php -->";
 						die($content);
 					}
 				}else{
-					$create_cache = false;
-
 					if($this->isMobile()){
 						if(class_exists("WpFcMobileCache") && isset($this->options->wpFastestCacheMobileTheme)){
-							$create_cache = true;
-
 							if($this->isPluginActive('wptouch/wptouch.php') || $this->isPluginActive('wptouch-pro/wptouch-pro.php')){
 								//to check that user-agent exists in wp-touch's list or not
-								if(!$this->is_wptouch_smartphone()){
+								if($this->is_wptouch_smartphone()){
+									$create_cache = true;
+								}else{
+									$create_cache = false;
+								}
+							}else if($this->isPluginActive('any-mobile-theme-switcher/any-mobile-theme-switcher.php')){
+								if($this->is_anymobilethemeswitcher_mobile()){
+									$create_cache = true;
+								}else{
+									$create_cache = false;
+								}
+							}else{
+								if((preg_match('/iPhone/', $_SERVER['HTTP_USER_AGENT']) && preg_match('/Mobile/', $_SERVER['HTTP_USER_AGENT'])) || (preg_match('/Android/', $_SERVER['HTTP_USER_AGENT']) && preg_match('/Mobile/', $_SERVER['HTTP_USER_AGENT']))){
+									$create_cache = true;
+								}else{
 									$create_cache = false;
 								}
 							}
+						}else{
+							$create_cache = false;
 						}
 					}else{
 						$create_cache = true;
@@ -258,8 +278,6 @@
 
 			if(preg_match("/Mediapartners-Google|Google\sWireless\sTranscoder/i", $_SERVER['HTTP_USER_AGENT'])){
 				return $buffer;
-			}else if($this->exclude_page()){
-				return $buffer."<!-- Wp Fastest Cache: Exclude Page -->";
 			}else if($this->is_xml($buffer)){
 				return $buffer;
 			}else if (is_user_logged_in() || $this->isCommenter()){
@@ -290,8 +308,6 @@
 				return $buffer."<!-- wpfcNOT has been detected -->";
 			}else if(isset($_GET["preview"])){
 				return $buffer."<!-- not cached -->";
-			}else if(preg_match("/\?/", $_SERVER["REQUEST_URI"]) && !preg_match("/\/\?fdx\_switcher\=true/", $_SERVER["REQUEST_URI"])){ // for WP Mobile Edition
-				return $buffer;
 			}else if($this->checkHtml($buffer)){
 				return $buffer."<!-- html is corrupted -->";
 			}else{				
@@ -367,13 +383,17 @@
 					$content = $this->minify($content);
 					
 					if($this->cdn){
-						$content = preg_replace_callback("/(srcset|src|href)\=[\'\"]([^\'\"]+)[\'\"]/i", array($this, 'cdn_replace_urls'), $content);
+						$content = preg_replace_callback("/(srcset|src|href|data-lazyload)\=[\'\"]([^\'\"]+)[\'\"]/i", array($this, 'cdn_replace_urls'), $content);
 						// url()
 						$content = preg_replace_callback("/(url)\(([^\)]+)\)/i", array($this, 'cdn_replace_urls'), $content);
 					}
 
 					if(isset($this->options->wpFastestCacheRenderBlocking) && method_exists("WpFastestCachePowerfulHtml", "render_blocking")){
-						$content = $powerful_html->render_blocking($content);
+						if(isset($this->options->wpFastestCacheRenderBlockingCss)){
+							$content = $powerful_html->render_blocking($content, true);
+						}else{
+							$content = $powerful_html->render_blocking($content);
+						}
 					}
 					
 					$content = str_replace("<!--WPFC_FOOTER_START-->", "", $content);
@@ -392,21 +412,6 @@
 			$head_last_index = strpos($content, "</head>");
 
 			return substr($content, $head_first_index, ($head_last_index-$head_first_index + 1));
-		}
-
-		public function cdn_replace_urls($matches){
-			$this->cdn->file_types = str_replace(",", "|", $this->cdn->file_types);
-
-			if(preg_match("/\.(".$this->cdn->file_types.")/i", $matches[0])){
-				if(preg_match("/".preg_quote($this->cdn->originurl, "/")."/", $matches[2])){
-					$matches[0] = preg_replace("/(http(s?)\:)?\/\/(www\.)?".preg_quote($this->cdn->originurl, "/")."/i", $this->cdn->cdnurl, $matches[0]);
-				}else if(preg_match("/^(\/?)(wp-includes|wp-includes)/", $matches[2])){
-					$matches[2] = preg_replace("/^\//", "", $matches[2]);
-					$matches[0] = str_replace($matches[2], $this->cdn->cdnurl."/".$matches[2], $matches[0]);
-				}
-			}
-
-			return $matches[0];
 		}
 
 		public function minify($content){
@@ -614,6 +619,7 @@
 		}
 
 		public function is_wptouch_smartphone(){
+			// https://plugins.svn.wordpress.org/wptouch/tags/4.0.4/core/mobile-user-agents.php
 			// wptouch: ipad is accepted as a desktop so no need to create cache if user agent is ipad 
 			// https://wordpress.org/support/topic/plugin-wptouch-wptouch-wont-display-mobile-version-on-ipad?replies=12
 			if(preg_match("/ipad/i", $_SERVER['HTTP_USER_AGENT'])){
@@ -647,6 +653,47 @@
 						return true;
 					}
 				}
+			}
+
+			return false;
+		}
+
+		public function is_anymobilethemeswitcher_mobile(){
+			// https://plugins.svn.wordpress.org/any-mobile-theme-switcher/tags/1.9/any-mobile-theme-switcher.php
+			$user_agent = $_SERVER['HTTP_USER_AGENT'];
+
+			switch(true){
+				case (preg_match('/ipad/i',$user_agent));
+					return true;     
+				break;
+
+				case (preg_match('/ipod/i',$user_agent)||preg_match('/iphone/i',$user_agent));
+					return true;     
+				break;
+
+				case (preg_match('/android/i',$user_agent));
+					return true;
+				break;
+
+				case (preg_match('/opera mini/i',$user_agent));
+					return true;     
+				break;
+
+				case (preg_match('/blackberry/i',$user_agent));
+					return true;     
+				break;
+
+				case (preg_match('/(pre\/|palm os|palm|hiptop|avantgo|plucker|xiino|blazer|elaine)/i',$user_agent));
+					return true;     
+				break;
+
+				case (preg_match('/(iris|3g_t|windows ce|opera mobi|windows ce; smartphone;|windows ce; iemobile)/i',$user_agent));
+					return true;     
+				break;
+
+				case (preg_match('/(mini 9.5|vx1000|lge |m800|e860|u940|ux840|compal|wireless| mobi|ahong|lg380|lgku|lgu900|lg210|lg47|lg920|lg840|lg370|sam-r|mg50|s55|g83|t66|vx400|mk99|d615|d763|el370|sl900|mp500|samu3|samu4|vx10|xda_|samu5|samu6|samu7|samu9|a615|b832|m881|s920|n210|s700|c-810|_h797|mob-x|sk16d|848b|mowser|s580|r800|471x|v120|rim8|c500foma:|160x|x160|480x|x640|t503|w839|i250|sprint|w398samr810|m5252|c7100|mt126|x225|s5330|s820|htil-g1|fly v71|s302|-x113|novarra|k610i|-three|8325rc|8352rc|sanyo|vx54|c888|nx250|n120|mtk |c5588|s710|t880|c5005|i;458x|p404i|s210|c5100|teleca|s940|c500|s590|foma|samsu|vx8|vx9|a1000|_mms|myx|a700|gu1100|bc831|e300|ems100|me701|me702m-three|sd588|s800|8325rc|ac831|mw200|brew |d88|htc\/|htc_touch|355x|m50|km100|d736|p-9521|telco|sl74|ktouch|m4u\/|me702|8325rc|kddi|phone|lg |sonyericsson|samsung|240x|x320|vx10|nokia|sony cmd|motorola|up.browser|up.link|mmp|symbian|smartphone|midp|wap|vodafone|o2|pocket|kindle|mobile|psp|treo)/i',$user_agent)); 
+					return true;
+				break;
 			}
 
 			return false;
