@@ -22,18 +22,21 @@ source $basedir/app.conf
 }
 
 
-###handle backup### 
+###handle backup###
 tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath &> /dev/null
 
-### manage backup 
+### manage backup
 cd $basedir/bkp
 ls --time-style=+%F_%Hh%M *tgz >> listfiles
-backup_files=$( while read i ; do echo `pwd`/$i; done < listfiles)
+have_list=$(wc -c listfiles | cut -d ' ' -f1)
+backup_files=$(while read i ; do echo `pwd`/$i; done < listfiles)
 rm listfiles
-count_files=$(echo "$backup_files" | wc -l)
-[ "$count_files" -gt 2 ] && {
-        count_to_remove=$( expr $count_files - 2 )
-        echo "$backup_files" | head -n${count_to_remove} | xargs rm
+[ $have_list == 0 ] || {
+	count_files=$(echo  "$backup_files" | wc -l)
+	[ "$count_files" -gt 1 ] && {
+	        count_to_remove=$( expr $count_files - 1 )
+	        echo "$backup_files" | head -n${count_to_remove} | xargs rm
+	}
 }
 
 ###uptade plugins payed###
