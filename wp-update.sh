@@ -61,8 +61,10 @@ plugins_list=$(cd $WordPressPath; php $basedir/lib/wp-cli.phar plugin list)
 cd  $WordPressPath
 echo $update_options | grep core &> /dev/null
 [ $? == 0 ] && {
-	php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
-	php $basedir/lib/wp-cli.phar core update-db &> $basedir/coreUpdate_db.log
+	#php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
+	#php $basedir/lib/wp-cli.phar core update-db &> $basedir/coreUpdate_db.log
+	$basedir/lib/wpversion.php $basedir $WordPressPath
+	[ $? == 0 ] && cp -rf  $basedir/wordpress/* $WordPressPath 
 }
 echo $update_options | grep themes &> /dev/null
 [ $? == 0 ] && {
