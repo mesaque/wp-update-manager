@@ -79,11 +79,12 @@ else
 	exit 1
 fi
 
-status_page=$(curl -I localhost/digital-factory-brazil/ |  head -n1 | cut -d' ' -f2);
+status_page=$(curl -I $web_site_url/ |  head -n1 | cut -d' ' -f2);
 echo $status_page
 is_ok=$(expr $status_page \> 400)
 [ $is_ok == 1 ] && {
 	tar -xzf $bkp_file -C /
+	$basedir/slack_notification "{$web_site_url}The update result in a ERROR, we restore a backup" '' $basedir 'error'
 	exit 1
 }
 
