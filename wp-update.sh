@@ -23,7 +23,8 @@ source $basedir/app.conf
 
 
 ###handle backup###
-tar -czf $basedir/bkp/$(date +%F_%Hh%M).tgz --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath &> /dev/null
+bkp_file=$basedir/bkp/$(date +%F_%Hh%M).tgz
+tar -czf $bkp_file --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath &> /dev/null
 
 ### manage backup
 cd $basedir/bkp
@@ -77,6 +78,15 @@ else
 	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
 	exit 1
 fi
+
+status_page=$(curl -I localhost/digital-factory-brazil/ |  head -n1 | cut -d' ' -f2);
+echo $status_page
+is_ok=$(expr $status_page \> 400)
+[ $is_ok == 1 ] && {
+	tar -xzf $bkp_file -C /
+	exit 1
+}
+
 #handle log from WordPress Update
 wpResult=$( cat $basedir/coreUpdate.log | sed 's/^[^U].*$//;s/Us.*$//' )
 [ "$wpResult" ] && echo "WordPress is $wpResult" >> $log
