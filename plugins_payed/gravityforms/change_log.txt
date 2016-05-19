@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------------------------------------------------
+Version 1.9.19.2
+	- Fixed an issue with Web API developer tools not loading the appropriate scripts.
+
+------------------------------------------------------------------------------------------------------------------
+Version 1.9.19.1
+    - Fixed an issue with AJAX enabled forms not adding the gform_validation_error class to the form wrapper when a validation error occurs.
+
+------------------------------------------------------------------------------------------------------------------
 Version 1.9.19
 
     - Added support for the Customize Posts feature plugin. The Add Form button appears in the editor when editing posts in the front-end using the Customizer.
