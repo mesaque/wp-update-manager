@@ -3,6 +3,7 @@
 basename=$(basename $0);
 basedir=$( which $0 |  sed "s/\/$basename//g");
 log=$basedir/status.log
+
 rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_db.log $basedir/themesUpdate.log $basedir/pluginsUpdate.log &> /dev/null
 
 #try auto-update
@@ -13,6 +14,7 @@ rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_d
 }
 
 [ ! -d $basedir/bkp ] && mkdir $basedir/bkp
+[ ! -d $basedir/tmp ] && mkdir $basedir/tmp
 
 source $basedir/app.conf
 
@@ -40,44 +42,47 @@ rm listfiles
 	}
 }
 
-###uptade plugins payed###
+###handle with free plugins
+plugins_dir=$($basedir/lib/helper.php $basedir $WordPressPath 2 )
+all_plugins=$(ls  $plugins_dir)
+
+old_IFS=$IFS
+IFS=$'\n'
+for plugin in ${all_plugins}; do
+	info=$($basedir/lib/helper.php $basedir $WordPressPath 3 $plugin) 	
+	[ "$info" ] && {
+		link=$(echo $info | cut -d';' -f2)
+		version_newest=$(echo $info | cut -d';' -f1)
+		version=$($basedir/check-version.sh $plugins_dir $plugin)
+		updated=$(expr ${version_newest} \> ${version})
+		[ $updated != 1 ] && continue;
+		wget $link  --directory-prefix=$basedir/tmp/ &> /dev/null
+		unzip -o -x $basedir/tmp/${link#*/*/*/*/} -d $plugins_dir/ &> /dev/null
+		rm  $basedir/tmp/${link#*/*/*/*/}
+		
+	}
+done
+IFS=$old_IFS
+
+###Handle with plugins payed###
 plugins_payed=$(ls $basedir/plugins_payed/)
-plugins_list=$(cd $WordPressPath; php $basedir/lib/wp-cli.phar plugin list)
 [ "$plugins_payed" ] && {
 	for plugin in $plugins_payed; do
 		if [ -d "${WordPressPath}/wp-content/plugins/${plugin}" ] ; then
-			vsP=$( echo "$plugins_list" | grep "${plugin}\s" | sed 's#\s#_#g' | cut -d'_' -f4)
-			vsE=$(find $basedir/plugins_payed/${plugin} -maxdepth 1 | grep '.php' | xargs grep 'Version: ' | sed 's#.*/##' | sed 's#.$##' | sed 's# #_#g' | cut -d'_' -f2)
-			checkVersion=$(expr "$vsE" \< "$vsP")
-			equalVersion=$(expr "$vsE" = "$vsP")
-			[ "$equalVersion" == 1 ] && continue;
-			[ "$checkVersion" == 1 ] && continue;
-			rm -rf ${WordPressPath}/wp-content/plugins/${plugin}
+			vsP=$($basedir/check-version.sh $plugins_dir $plugin)
+			vsE=$($basedir/check-version.sh $basedir/plugins_payed/ $plugin)
+			checkVersion=$(expr "$vsE" \> "$vsP")
+			[ "$checkVersion" == 0 ] && continue;
 			cp -rf "$basedir/plugins_payed/${plugin}" "${WordPressPath}/wp-content/plugins/"
-			echo "${plugin} ${vsP}   ${vsE} Updated" >> $basedir/plugins_payed.log
 		fi
 	done
 }
+
 ###begin update script by wp-cli
-cd  $WordPressPath
-echo $update_options | grep core &> /dev/null
 [ $? == 0 ] && {
-	#php $basedir/lib/wp-cli.phar core update &> $basedir/coreUpdate.log
-	#php $basedir/lib/wp-cli.phar core update-db &> $basedir/coreUpdate_db.log
-	$basedir/lib/wpversion.php $basedir $WordPressPath
+	$basedir/lib/helper.php $basedir $WordPressPath 1
 	[ $? == 0 ] && cp -rf  $basedir/wordpress/* $WordPressPath 
 }
-echo $update_options | grep themes &> /dev/null
-[ $? == 0 ] && {
-	php $basedir/lib/wp-cli.phar theme update --all &> $basedir/themesUpdate.log
-}
-echo $update_options | grep plugins &> /dev/null
-if [ $? == 0 ]; then
-	php $basedir/lib/wp-cli.phar plugin update --all &> $basedir/pluginsUpdate.log
-else
-	$basedir/slack_notification "{$web_site_url}The Update has NOT successful" '' $basedir 'error'
-	exit 1
-fi
 
 status_page=$(curl -I $web_site_url/ |  head -n1 | cut -d' ' -f2);
 echo $status_page
@@ -88,22 +93,3 @@ is_ok=$(expr $status_page \> 400)
 	exit 1
 }
 
-#handle log from WordPress Update
-wpResult=$( cat $basedir/coreUpdate.log | sed 's/^[^U].*$//;s/Us.*$//' )
-[ "$wpResult" ] && echo "WordPress is $wpResult" >> $log
-
-#handle log from free plugins
-pluginResult=$(cat $basedir/pluginsUpdate.log | sed '1,/Success/ d' | sed 's/^nam.*$//;s/^Suc.*$//;/Ativando Modo de Manutenção.*$/,$d' )
-linePluginCount=$(echo "$pluginResult" | wc -l);
-[ $linePluginCount -gt 1 ] && echo "$pluginResult" >> $log 
-
-#handle log from payed plugins
-plugins_payed_version=$(cat $basedir/plugins_payed.log)
-[ -s $basedir/plugins_payed.log ] && echo "$plugins_payed_version" >> $log
-
-if [ -s $log ]; then
-	statusMsg=$(cat $log | sed 's#&#\&amp;#g' | sed 's#<#\&lt;#g'  | sed 's#>#\&gt;#g' | sed 's# #\&nbsp;#g' | sed 's#\t#\&nbsp;\&nbsp;#g' | sed 's#:#\&colon;#g' )
-	$basedir/slack_notification "{$web_site_url}Update successful" "$statusMsg" $basedir
-else
-	$basedir/slack_notification "{$web_site_url}Everything is up to date :P" '' $basedir
-fi
