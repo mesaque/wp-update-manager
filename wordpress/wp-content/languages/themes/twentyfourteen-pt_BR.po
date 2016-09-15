@@ -173,7 +173,7 @@ msgstr "Melhore o design do seu site usando <a href=\"%s\">Imagens Destacadas</a
 msgid "The home page features your choice of up to 6 posts prominently displayed in a grid or slider, controlled by a <a href=\"%1$s\">tag</a>; you can change the tag and layout in <a href=\"%2$s\">Appearance &rarr; Customize</a>. If no posts match the tag, <a href=\"%3$s\">sticky posts</a> will be displayed instead."
 msgstr "A página inicial destaca até 6 posts de sua escolha exibidos em uma grade ou apresentação de slides, controladas por uma <a href=\"%1$s\">tag</a>; você pode alterar a tag e o layout em <a href=\"%2$s\">Aparência &rarr; Personalizar</a>. Se nenhum post contiver a tag, os <a href=\"%3$s\">posts fixos</a> serão exibidos."
 
-#. #-#-#-#-#  twentyfourteen.pot (Twenty Fourteen 1.7)  #-#-#-#-#
+#. #-#-#-#-#  twentyfourteen.pot (Twenty Fourteen 1.8)  #-#-#-#-#
 #. Theme Name of the plugin/theme
 #: inc/customizer.php:142
 msgid "Twenty Fourteen"
@@ -431,7 +431,7 @@ msgstr "Parece que nada foi encontrado neste endereço. Que tal tentar fazer uma
 msgid "Not Found"
 msgstr "Não encontrado"
 
-#. #-#-#-#-#  twentyfourteen.pot (Twenty Fourteen 1.7)  #-#-#-#-#
+#. #-#-#-#-#  twentyfourteen.pot (Twenty Fourteen 1.8)  #-#-#-#-#
 #. Author URI of the plugin/theme
 #: footer.php:21
 msgid "https://wordpress.org/"
