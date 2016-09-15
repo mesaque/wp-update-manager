@@ -164,24 +164,6 @@ function gf_is_match_default( $input, rule, formId, fieldId ) {
 	return isMatch;
 }
 
-function gf_get_field_number_format( fieldId, formId, context ) {
-
-	var fieldNumberFormats = rgars( window, 'gf_global/number_formats/{0}/{1}'.format( formId, fieldId ) ),
-		format = false;
-
-	if( fieldNumberFormats === '' ) {
-		return format;
-	}
-
-	if( typeof context == 'undefined' ) {
-		format = fieldNumberFormats.price !== false ? fieldNumberFormats.price : fieldNumberFormats.value;
-	} else {
-		format = fieldNumberFormats[ context ];
-	}
-
-	return format;
-}
-
 function gf_format_number( value, fieldNumberFormat ) {
 
 	decimalSeparator = '.';
@@ -296,7 +278,7 @@ function gf_do_field_action(formId, action, fieldId, isInit, callback){
 		//calling callback function on the last dependent field, to make sure it is only called once
 		do_callback = (i+1) == dependent_fields.length ? callback : null;
 
-		gf_do_action(action, targetId, conditional_logic["animation"], defaultValues, isInit, do_callback);
+		gf_do_action(action, targetId, conditional_logic["animation"], defaultValues, isInit, do_callback, formId);
 
 		gform.doAction('gform_post_conditional_logic_field_action', formId, action, targetId, defaultValues, isInit);
 	}
@@ -306,10 +288,10 @@ function gf_do_next_button_action(formId, action, fieldId, isInit){
 	var conditional_logic = window["gf_form_conditional_logic"][formId];
 	var targetId = "#gform_next_button_" + formId + "_" + fieldId;
 
-	gf_do_action(action, targetId, conditional_logic["animation"], null, isInit);
+	gf_do_action(action, targetId, conditional_logic["animation"], null, isInit, null, formId);
 }
 
-function gf_do_action(action, targetId, useAnimation, defaultValues, isInit, callback){
+function gf_do_action(action, targetId, useAnimation, defaultValues, isInit, callback, formId){
 	var $target = jQuery(targetId);
 	if(action == "show"){
 
@@ -347,7 +329,9 @@ function gf_do_action(action, targetId, useAnimation, defaultValues, isInit, cal
 		//if field is not already hidden, reset its values to the default
 		var child = $target.children().first();
 		if (child.length > 0){
-			if(!gformIsHidden(child)){
+			var reset = gform.applyFilters('gform_reset_pre_conditional_logic_field_action', true, formId, targetId, defaultValues, isInit);
+
+			if(reset && !gformIsHidden(child)){
 				gf_reset_to_default(targetId, defaultValues);
 			}
 		}
