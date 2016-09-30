@@ -1,7 +1,8 @@
 #!/bin/bash
 
 basename=$(basename $0);
-basedir=$( which $0 |  sed "s/\/$basename//g");
+basedir=`pwd -P`
+
 log=$basedir/status.log
 
 rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_db.log $basedir/themesUpdate.log $basedir/pluginsUpdate.log &> /dev/null
@@ -17,9 +18,8 @@ rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_d
 [ ! -d $basedir/tmp ] && mkdir $basedir/tmp
 
 source $basedir/app.conf
-
 [ "$update_options" ] || {
-        echo "variable update_option not find in app.conf";
+        echo "variable update_options not find in app.conf";
         exit;
 }
 
