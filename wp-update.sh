@@ -3,6 +3,10 @@
 basename=$(basename $0);
 basedir=`pwd -P`
 
+[ "$CUSTOM_BASE_DIR" ] && {
+	basedir=$CUSTOM_BASE_DIR
+} 
+
 log=$basedir/status.log
 
 rm $log $basedir/plugins_payed.log $basedir/coreUpdate.log $basedir/coreUpdate_db.log $basedir/themesUpdate.log $basedir/pluginsUpdate.log &> /dev/null
