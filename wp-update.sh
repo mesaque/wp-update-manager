@@ -1,7 +1,7 @@
 #!/bin/bash
 
 basename=$(basename $0);
-basedir=`pwd -P`
+basedir=$( which $0 |  sed "s/\/$basename//g");
 
 [ "$CUSTOM_BASE_DIR" ] && {
 	basedir=$CUSTOM_BASE_DIR
