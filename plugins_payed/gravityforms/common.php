@@ -875,9 +875,12 @@ class GFCommon {
 		/**
 		 * Filter data that will be used to replace merge tags.
 		 *
+		 * @since 2.1.1.11 Added the Entry Object as the 4th parameter.
+		 *
 		 * @param $data  array  Array of key/value pairs, where key is used as merge tag and value is an array of data available to the merge tag.
 		 * @param $text  string String of text which will be searched for merge tags.
 		 * @param $form  array  Current form object.
+		 * @param $lead  array  The current Entry Object.
 		 *
 		 * @see https://www.gravityhelp.com/documentation/article/gform_merge_tag_data/
 		 */
@@ -2006,7 +2009,25 @@ class GFCommon {
 		return self::is_product_field( $field_type ) || $field_type == 'donation';
 	}
 
+	/**
+	 * Checks if a field is a product field.
+	 *
+	 * @access public
+	 * @since  2.1.1.12 Added support for hiddenproduct, singleproduct, and singleshipping input types.
+	 * 
+	 * @param  string  $field_type The field type.
+	 * 
+	 * @return bool Returns true if it is a product field. Otherwise, false.
+	 */
 	public static function is_product_field( $field_type ) {
+		/**
+		 * Filters the input types to use when checking if a field is a product field.
+		 *
+		 * @since 2.1.1.12 Added support for hiddenproduct, singleproduct, and singleshipping input types.
+		 * @since 1.9.14
+		 * 
+		 * @param $product_fields The product field types.
+		 */
 		$product_fields = apply_filters( 'gform_product_field_types', array( 'option', 'quantity', 'product', 'total', 'shipping', 'calculation', 'price', 'hiddenproduct', 'singleproduct', 'singleshipping' ) );
 		return in_array( $field_type, $product_fields );
 	}
@@ -4779,7 +4800,7 @@ class GFCommon {
 
 		if ( ! in_array( $field->type, array( 'html', 'section', 'signature' ) ) ) {
 			$value = self::encode_shortcodes( $value );
-		};
+		}
 
 		if ( $esc_attr ) {
 			$value = esc_attr( $value );
@@ -4787,7 +4808,12 @@ class GFCommon {
 
 		if ( $modifier == 'label' ) {
 			$value = empty( $value ) ? '' : $field->label;
-		} else if ( $modifier == 'qty' && $field->type == 'product' ) {
+		}
+		else if( $modifier == 'numeric' ) {
+			$number_format = $field->numberFormat ? $field->numberFormat : 'decimal_dot';
+			$value = self::clean_number( $value, $number_format );
+		}
+		else if ( $modifier == 'qty' && $field->type == 'product' ) {
 			// Getting quantity associated with product field.
 			$products = self::get_product_fields( $form, $lead, false, false );
 			$value    = 0;

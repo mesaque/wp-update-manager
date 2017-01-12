@@ -685,10 +685,11 @@ class GFExport {
 
 			/**
 			 * Allows the BOM character to be excluded from the beginning of entry export files.
+			 * 
 			 * @since 2.1.1.21
 			 *
-			 * @param bool $include_bom Wether or not to include the BOM characters. Defaults to true
-			 * @param array $form The Form Object
+			 * @param bool  $include_bom Whether or not to include the BOM characters. Defaults to true.
+			 * @param array $form        The Form Object.
 			 */
 			$include_bom = apply_filters( 'gform_include_bom_export_entries', true, $form );
 

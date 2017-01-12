@@ -730,7 +730,10 @@ class GFFormDisplay {
 				$review_page_done = true;
 
 				$max_page_number = self::get_max_page_number( $form );
-				$page_number     = $submission_details['page_number'] > $max_page_number ? $max_page_number : $submission_details['page_number'];
+				$page_number     = $submission_details['page_number'];
+				if ( $page_number > 1 && $max_page_number > 0 && $page_number > $max_page_number ) {
+					$page_number = $max_page_number;
+				}
 				self::set_submission_if_null( $form_id, 'page_number', $page_number );
 			}
 		}
@@ -1432,11 +1435,23 @@ class GFFormDisplay {
 		}
 	}
 
+	/**
+	 * Handles the actions that occur when a confirmation occurs.
+	 *
+	 * @since 2.1.1.11 Refactored to use GFFormDisplay::get_confirmation_message()
+	 * 
+	 * @param  array   $form     The Form Object.
+	 * @param  array   $lead     The Entry Object.
+	 * @param  bool    $ajax     If AJAX is being used. Defaults to false.
+	 * @param  array   $aux_data Additional data to use when building the confirmation message. Defaults to empty array.
+	 * 
+	 * @return array The Confirmation Object.
+	 */
 	public static function handle_confirmation( $form, $lead, $ajax = false, $aux_data = array() ) {
 
 		GFCommon::log_debug( 'GFFormDisplay::handle_confirmation(): Sending confirmation.' );
 
-		//run the function to populate the legacy confirmation format to be safe
+		// Run the function to populate the legacy confirmation format to be safe.
 		$form = self::update_confirmation( $form, $lead );
 		$form_id = absint( $form['id'] );
 
@@ -1472,7 +1487,7 @@ class GFFormDisplay {
 			}
 
 			if ( headers_sent() || $ajax ) {
-				//Perform client side redirect for AJAX forms, of if headers have already been sent
+				// Perform client side redirect for AJAX forms, of if headers have already been sent.
 				$confirmation = self::get_js_redirect_confirmation( $url, $ajax );
 			} else {
 				$confirmation = array( 'redirect' => $url );
@@ -1496,6 +1511,19 @@ class GFFormDisplay {
 		return $confirmation;
 	}
 
+	/**
+	 * Gets the confirmation message to be displayed.
+	 *
+	 * @since  2.1.1.11
+	 * @access public
+	 * 
+	 * @param  array $confirmation The Confirmation Object.
+	 * @param  array $form         The Form Object.
+	 * @param  array $entry        The Entry Object.
+	 * @param  array $aux_data     Additional data to be passed to GFCommon::replace_variables().
+	 * 
+	 * @return string The confirmation message.
+	 */
 	public static function get_confirmation_message( $confirmation, $form, $entry, $aux_data = array() ) {
 
 		$default_anchor = self::has_pages( $form ) ? 1 : 0;

@@ -962,7 +962,7 @@ var GFCalc = function(formId, formulaFields){
             } catch( e ) { }
         }
 
-        // if result is postive infinity, negative infinity or a NaN, defaults to 0
+        // if result is positive infinity, negative infinity or a NaN, defaults to 0
         if( ! isFinite( result ) )
             result = 0;
 
@@ -1294,6 +1294,10 @@ function renderRecaptcha() {
                 'sitekey': $elem.data( 'sitekey' ),
                 'theme':   $elem.data( 'theme' )
             };
+
+        if( ! $elem.is( ':empty' ) ) {
+            return;
+        }
 
         if( $elem.data( 'stoken' ) ) {
             parameters.stoken = $elem.data( 'stoken' );

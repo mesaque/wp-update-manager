@@ -2176,7 +2176,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 				)
 			),
 			array(
-				'title'      => 'Subscription Settings',
+				'title'      => esc_html__( 'Subscription Settings', 'gravityforms' ),
 				'dependency' => array(
 					'field'  => 'transactionType',
 					'values' => array( 'subscription' )
@@ -2223,7 +2223,7 @@ abstract class GFPaymentAddOn extends GFFeedAddOn {
 				)
 			),
 			array(
-				'title'      => 'Products &amp; Services Settings',
+				'title'      => esc_html__( 'Products &amp; Services Settings', 'gravityforms' ),
 				'dependency' => array(
 					'field'  => 'transactionType',
 					'values' => array( 'product', 'donation' )
