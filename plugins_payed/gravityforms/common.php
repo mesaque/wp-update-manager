@@ -1491,6 +1491,20 @@ class GFCommon {
 				break;
 		}
 
+		/**
+		 * Filter the markup of the order summary which appears on the Entry Detail, the {all_fields} merge tag and the {pricing_fields} merge tag.
+         *
+         * @since 2.1.2.5
+         * @see   https://www.gravityhelp.com/documentation/article/gform_order_summary/
+         *
+         * @var string $field_data      The order summary markup.
+         * @var array  $form            Current form object.
+         * @var array  $lead            Current entry object.
+         * @var array  $products        Current order summary object.
+         * @var string $format          Format that should be used to display the summary ('html' or 'text').
+		 */
+		$field_data = gf_apply_filters( array( 'gform_order_summary', $form['id'] ), $field_data, $form, $lead, $products, $format );
+
 		return $field_data;
 	}
 
@@ -1880,7 +1894,7 @@ class GFCommon {
 			}
 
 			if ( ! empty( $phpmailer->ErrorInfo ) ) {
-				GFCommon::log_debug( __METHOD__ . '(): PHPMailer class returned an error message: ' . $phpmailer->ErrorInfo );
+				GFCommon::log_debug( __METHOD__ . '(): PHPMailer class returned an error message: ' . print_r( $phpmailer->ErrorInfo, 1 ) );
 			}			
 		} else {
 			GFCommon::log_debug( 'GFCommon::send_email(): Aborting. The gform_pre_send_email hook was used to set the abort_email parameter to true.' );
@@ -3755,9 +3769,9 @@ class GFCommon {
 		$value   = false;
 
 		$field            = RGFormsModel::get_field( $form, $field_id );
-		$is_pricing_field = self::has_currency_value( $field );
+		$is_pricing_field = $field ? self::has_currency_value( $field ) : false;
 
-		if ( $field->numberFormat ) {
+		if ( $field && $field->numberFormat ) {
 			$number_format = $field->numberFormat;
 		} elseif ( empty( $number_format ) ) {
 			$number_format = 'decimal_dot';
@@ -4948,7 +4962,7 @@ class GFCommon {
 			array(
 				'label'       => __( 'Administrative', 'gravityforms' ),
 				'value'       => 'administrative',
-				'description' => __( 'The field is only visible when administrating submitted entries. The field is not visible or functional when viewing the form.', 'gravityforms' )
+				'description' => __( 'The field is only visible when administering submitted entries. The field is not visible or functional when viewing the form.', 'gravityforms' )
 			),
 		);
 

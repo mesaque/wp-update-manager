@@ -971,6 +971,7 @@ class GFEntryDetail {
 			if ( $has_product_fields ) {
 				$products = GFCommon::get_product_fields( $form, $lead );
 				if ( ! empty( $products['products'] ) ) {
+				    ob_start();
 					?>
 					<tr>
 						<td colspan="2" class="entry-view-field-name"><?php echo esc_html( gf_apply_filters( array( 'gform_order_label', $form_id ), __( 'Order', 'gravityforms' ), $form_id ) ); ?></td>
@@ -1055,8 +1056,21 @@ class GFEntryDetail {
 							</table>
 						</td>
 					</tr>
-
 					<?php
+					/**
+					 * Filter the markup of the order summary which appears on the Entry Detail, the {all_fields} merge tag and the {pricing_fields} merge tag.
+                     *
+                     * @since 2.1.2.5
+                     * @see   https://www.gravityhelp.com/documentation/article/gform_order_summary/
+					 *
+					 * @var string $markup          The order summary markup.
+					 * @var array  $form            Current form object.
+					 * @var array  $lead            Current entry object.
+					 * @var array  $products        Current order summary object.
+					 * @var string $format          Format that should be used to display the summary ('html' or 'text').
+					 */
+                    $order_summary = gf_apply_filters( array( 'gform_order_summary', $form['id'] ), ob_get_clean(), $form, $lead, $products, 'html' );
+                    echo $order_summary;
 				}
 			}
 			?>

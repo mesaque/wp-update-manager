@@ -747,7 +747,7 @@ class GFFormsModel {
 			foreach ( $form['fields'] as &$field ) {
 
 				// convert adminOnly property to visibility
-				if( ! isset( $field['visibility'] ) ) {
+				if ( ! isset( $field['visibility'] ) ) {
 					$field['visibility'] = isset( $field['adminOnly'] ) && $field['adminOnly'] ? 'administrative' : 'visible';
 					unset( $field['adminOnly'] );
 				}
@@ -763,9 +763,7 @@ class GFFormsModel {
 					$field->pageNumber = $page_number;
 				}
 
-				if ( $field->type == 'creditcard' ) {
-					$field->maybe_upgrade_inputs();
-				}
+				$field->post_convert_field();
 			}
 		}
 
