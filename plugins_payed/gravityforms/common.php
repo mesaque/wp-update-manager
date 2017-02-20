@@ -1819,7 +1819,7 @@ class GFCommon {
 	}
 
 	public static function send_email( $from, $to, $bcc, $reply_to, $subject, $message, $from_name = '', $message_format = 'html', $attachments = '', $entry = false, $notification = false ) {
-		
+
 		global $phpmailer;
 
 		$to    = str_replace( ' ', '', $to );
@@ -1895,7 +1895,7 @@ class GFCommon {
 
 			if ( ! empty( $phpmailer->ErrorInfo ) ) {
 				GFCommon::log_debug( __METHOD__ . '(): PHPMailer class returned an error message: ' . print_r( $phpmailer->ErrorInfo, 1 ) );
-			}			
+			}
 		} else {
 			GFCommon::log_debug( 'GFCommon::send_email(): Aborting. The gform_pre_send_email hook was used to set the abort_email parameter to true.' );
 		}
@@ -2028,9 +2028,9 @@ class GFCommon {
 	 *
 	 * @access public
 	 * @since  2.1.1.12 Added support for hiddenproduct, singleproduct, and singleshipping input types.
-	 * 
+	 *
 	 * @param  string  $field_type The field type.
-	 * 
+	 *
 	 * @return bool Returns true if it is a product field. Otherwise, false.
 	 */
 	public static function is_product_field( $field_type ) {
@@ -2039,7 +2039,7 @@ class GFCommon {
 		 *
 		 * @since 2.1.1.12 Added support for hiddenproduct, singleproduct, and singleshipping input types.
 		 * @since 1.9.14
-		 * 
+		 *
 		 * @param $product_fields The product field types.
 		 */
 		$product_fields = apply_filters( 'gform_product_field_types', array( 'option', 'quantity', 'product', 'total', 'shipping', 'calculation', 'price', 'hiddenproduct', 'singleproduct', 'singleshipping' ) );
@@ -2787,7 +2787,18 @@ class GFCommon {
 			}
 		}
 
-		$field_input = apply_filters( 'gform_field_input', '', $field, $value, $lead_id, $form_id );
+		/**
+		 * Filters the field input markup.
+		 *
+		 * @since 2.1.2.14 Added form and field ID modifiers.
+		 *
+		 * @param string empty    The markup. Defaults to an empty string.
+		 * @param array  $field   The Field Object.
+		 * @param int    $lead_id The entry ID.
+		 * @param string $value   The field value.
+		 * @param int    $form_id The form ID.
+		 */
+		$field_input = gf_apply_filters( array( 'gform_field_input', $form['id'], $field->id ), '', $field, $value, $lead_id, $form_id );
 		if ( $field_input ) {
 			return $field_input;
 		}

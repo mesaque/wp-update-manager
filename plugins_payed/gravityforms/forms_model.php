@@ -6035,6 +6035,11 @@ function gform_get_meta_values_for_entries( $entry_ids, $meta_keys ) {
  */
 function gform_update_meta( $entry_id, $meta_key, $meta_value, $form_id = null ) {
 	global $wpdb, $_gform_lead_meta;
+
+	if( intval( $entry_id ) <= 0 ) {
+		return;
+	}
+
 	$table_name = RGFormsModel::get_lead_meta_table_name();
 	if ( false === $meta_value ) {
 		$meta_value = '0';
@@ -6074,6 +6079,11 @@ function gform_update_meta( $entry_id, $meta_key, $meta_value, $form_id = null )
  */
 function gform_add_meta( $entry_id, $meta_key, $meta_value, $form_id = null ) {
 	global $wpdb, $_gform_lead_meta;
+
+	if( intval( $entry_id ) <= 0 ) {
+		return;
+	}
+
 	$table_name = RGFormsModel::get_lead_meta_table_name();
 	if ( false === $meta_value ) {
 		$meta_value = '0';
