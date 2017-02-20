@@ -1,6 +1,7 @@
 app.conf
 bkp/
 bkp/*
+tmp/
 result.txt
 coreUpdate.log
 pluginsUpdate.log
