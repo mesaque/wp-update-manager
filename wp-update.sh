@@ -30,7 +30,7 @@ source $basedir/app.conf
 
 ###handle backup###
 bkp_file=$basedir/bkp/$(date +%F_%Hh%M).tgz
-tar -czf $bkp_file --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes $WordPressPath &> /dev/null
+tar -czf $bkp_file --exclude=$WordPressPath/wp-content/uploads/* $tar_custom_excludes --exclude='*gz' --exclude='*zip' --exclude='*log' --exclude='*sql' --exclude=$WordPressPath/wp-content/cache  $WordPressPath &> /dev/null
 
 ### manage backup
 cd $basedir/bkp
