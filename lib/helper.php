@@ -47,19 +47,20 @@ function _check_wp_version()
 
 function _check_plugin_version( $plugin = null )
 {
-	if( null == $plugin ) exit('');
+    if( null == $plugin ) exit('');
 
-	$plugin_exist = @get_headers( sprintf( "https://wordpress.org/plugins/%s/", $plugin ), 1 );
-	if( null == $plugin_exist ) exit('');
+    $plugin_exist = @get_headers( sprintf( "https://wordpress.org/plugins/%s/", $plugin ), 1 );
+    if( null == $plugin_exist ) exit('');
 
-	$html = @file_get_contents( sprintf( "https://wordpress.org/plugins/%s/", $plugin ) );
-	$a_link = preg_match( '#<a.*downloadUrl.*</a>#i', $html, $href_array );
-	if( 1 != $a_link ) exit('');
+    $html = @file_get_contents( sprintf( "https://wordpress.org/plugins/%s/", $plugin ) );
+    $a_link = preg_match( '#<a.*plugin-download.*</a>#i', $html, $href_array );
+    if( 1 != $a_link ) exit('');
 
-	$version_ = preg_replace( array( '#.*Version #' , '#</a>#'), '', $href_array[0]);
-	$href_ = preg_replace( array( "#.*href='#" , "#'>.*#"), '', $href_array[0]);
-	echo $version_.';'.$href_;
-	exit(0);
+    $version = preg_match( '#<li.*Version.*<strong>.*</li>#i',  $html, $version_ );
+    $href_ = preg_replace( array( "#.*href=('|\")#" , "#('|\")>.*#"), '', $href_array[0]);
+    $version_ = preg_replace( array("#.*<strong>#", "#</strong>.*#"), '', $version_[0] );
+    echo $version_.';'.$href_;
+    exit(0);
 }
 
 exit(0);
