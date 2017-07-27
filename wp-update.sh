@@ -59,7 +59,7 @@ for plugin in ${all_plugins}; do
 		version_newest=$(echo $info | cut -d';' -f1)
 		version=$($basedir/check-version.sh $plugins_dir $plugin)
 		updated=$(php -r "echo version_compare('$version_newest',  '$version', '>');")
-		[ $updated != 1 ] && continue;
+		[ "$updated" != 1 ] && continue;
 		wget $link  --directory-prefix=$basedir/tmp/ &> /dev/null
 		unzip -o -x $basedir/tmp/${link#*/*/*/*/} -d $plugins_dir/ &> /dev/null
 		rm  $basedir/tmp/${link#*/*/*/*/}
